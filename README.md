@@ -1,5 +1,7 @@
 # QuantumLab
 
+QUARKS is a quantum circuit composer and simulator powered by a self-built C++ engine.
+
 QuantumLab is a small state-vector quantum circuit simulator. Its simulation engine is written in C++20 and can be compiled both as a native library for testing and as WebAssembly for in-browser execution. The website is a separate static HTML/CSS/JavaScript client.
 
 **There is no server-side simulation.** The browser calls a thin Embind API, which calls the same C++ engine used by native tests. JavaScript does not implement quantum gates.
