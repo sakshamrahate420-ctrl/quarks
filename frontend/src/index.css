@@ -213,7 +213,11 @@ h3 { font-size:14px;letter-spacing:-.02em;margin-bottom:6px; }
 .wire-context-actions button:hover:not(:disabled) { border-color:hsl(var(--primary)/.55);color:hsl(var(--primary)); }
 .wire-context-actions button:disabled { opacity:.45;cursor:not-allowed; }
 .add-classical-wire { display:inline-flex;align-items:center;gap:5px;margin:8px 0 0 58px;padding:5px 8px;border:1px dashed hsl(var(--accent)/.65);border-radius:6px;background:hsl(var(--card));color:hsl(var(--accent));font-size:10px;cursor:pointer; }
-.editor-side { border-left:1px solid hsl(var(--border));overflow:auto;background:hsl(var(--card)); }
+.editor-side { display:flex;flex-direction:column;border-left:1px solid hsl(var(--border));overflow:auto;background:hsl(var(--card)); }
+.editor-side > .side-tabs { order:0;flex:none; }
+.editor-side > .side-section:nth-child(2),.editor-side > .side-section:nth-child(3) { order:2; }
+.editor-side > .side-section:nth-child(4) { order:1; }
+.editor-side > .side-section:nth-child(5) { order:3; }
 .side-section { padding:15px;border-bottom:1px solid hsl(var(--border)); }
 .side-tabs { display:flex;gap:5px;border-bottom:1px solid hsl(var(--border));padding:8px 12px 0;position:sticky;top:0;background:hsl(var(--card));z-index:2; }
 .tab-button { border:0;background:transparent;color:hsl(var(--muted-foreground));padding:8px 10px 10px;font-size:10px;font-weight:800;cursor:pointer;border-bottom:2px solid transparent; }

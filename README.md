@@ -89,3 +89,10 @@ Run `run-demo.bat` from File Explorer or a terminal. The script builds the WASM 
 ### Launch from VS Code
 
 Open the `quantumlab` folder in VS Code and run `run-demo.bat` in the integrated terminal. For frontend-only work after the WASM files have been built, open a terminal in `frontend/`, run `npm install` once, then `npm run dev`.
+
+
+## Publish the public website
+
+A GitHub Actions workflow builds the C++ engine to WebAssembly, builds the QUARKS frontend, and deploys it to GitHub Pages whenever changes reach `main`. To turn on the public site, open the repository's **Settings → Pages**, set **Source** to **GitHub Actions**, and wait for the workflow in the **Actions** tab to finish.
+
+For this repository, the Pages URL is `https://sakshamrahate420-ctrl.github.io/quarks/`. The site runs circuits locally in each visitor's browser; it does not require user accounts or a simulation server.

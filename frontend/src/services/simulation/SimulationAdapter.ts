@@ -9,11 +9,11 @@ import type {
 } from "../../features/circuit/types";
 import { createSimulator } from "../../../../web-demo/quantumlab-api.js";
 
-type WasmAmplitude = { real: number; imag: number };
-type WasmSnapshot = { gate_index: number; gate: CircuitGate; statevector: WasmAmplitude[] };
+type WasmStatevector = { real: number[]; imag: number[] };
+type WasmSnapshot = { gate_index: number; gate: Record<string, unknown>; statevector: WasmStatevector };
 type WasmResult = {
   success: boolean;
-  statevector: WasmAmplitude[] | null;
+  statevector: WasmStatevector | null;
   probabilities: number[];
   measurement_counts: Record<string, number>;
   classical_counts: Record<string, number>;
@@ -25,13 +25,14 @@ type WasmSimulator = Awaited<ReturnType<typeof createSimulator>>;
 let simulatorPromise: Promise<WasmSimulator> | undefined;
 const loadSimulator = () => (simulatorPromise ??= createSimulator());
 
-const toAmplitude = ({ real, imag }: WasmAmplitude): ComplexAmplitude => ({ re: real, im: imag });
+const toAmplitudes = (statevector: WasmStatevector): ComplexAmplitude[] =>
+  statevector.real.map((re, index) => ({ re, im: statevector.imag[index] ?? 0 }));
 const toBitstring = (index: number, qubits: number) => index.toString(2).padStart(qubits, "0");
-const probabilitiesFor = (probabilities: number[], qubits: number, amplitudes: WasmAmplitude[] | null) =>
+const probabilitiesFor = (probabilities: number[], qubits: number, amplitudes: ComplexAmplitude[] | null) =>
   probabilities.map((probability, index) => ({
     index,
     bitstring: toBitstring(index, qubits),
-    amplitude: amplitudes ? toAmplitude(amplitudes[index]) : null,
+    amplitude: amplitudes?.[index] ?? null,
     probability,
   }));
 
@@ -86,19 +87,20 @@ export class QuantumLabWasmAdapter implements SimulationAdapter {
     }
 
     const { numQubits } = input.circuit;
-    const states = probabilitiesFor(response.probabilities, numQubits, response.statevector);
+    const statevector = response.statevector ? toAmplitudes(response.statevector) : null;
+    const states = probabilitiesFor(response.probabilities, numQubits, statevector);
     const snapshots: SimulationSnapshot[] = [];
     if (response.statevector) {
       const initial = Array.from({ length: 2 ** numQubits }, (_, index) => ({ real: index === 0 ? 1 : 0, imag: 0 }));
       snapshots.push({
         afterGateId: null,
         gateIndex: -1,
-        statevector: initial.map(toAmplitude),
+        statevector: initial.map(({ real, imag }) => ({ re: real, im: imag })),
         probabilities: initial.map(({ real }) => real * real),
       });
     }
     for (const snapshot of response.snapshots ?? []) {
-      const snapshotStates = snapshot.statevector.map(toAmplitude);
+      const snapshotStates = toAmplitudes(snapshot.statevector);
       const byIndex = new Map(gates.map((gate, index) => [index, gate]));
       const gateIndex = snapshot.gate_index;
       snapshots.push({
@@ -117,7 +119,7 @@ export class QuantumLabWasmAdapter implements SimulationAdapter {
       probabilityMode: hasMidCircuitMeasurement ? "trajectory-estimate" : "ideal-statevector",
       circuitId: input.circuit.id,
       shots: input.shots,
-      statevector: response.statevector?.map(toAmplitude) ?? null,
+      statevector,
       probabilities: states,
       measurementCounts: response.measurement_counts ?? {},
       snapshots,
