@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Drag quantum gates onto qubit wires and run them in QuantumLab.">
+  <title>QuantumLab Circuit Composer</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="QuantumLab Composer home"><span class="brand-mark">Q</span><span>QuantumLab <small>COMPOSER</small></span></a>
+      <div class="header-status" id="engine-status" role="status" aria-live="polite"><i></i><span>Loading engine…</span></div>
+      <div class="header-actions">
+        <button id="load-example" class="button subtle" type="button">Load example</button>
+        <button id="clear-circuit" class="button subtle" type="button">Clear</button>
+        <button id="run-circuit" class="button run-button" type="button" disabled><span>▶</span> Run circuit</button>
+      </div>
+    </header>
+
+    <nav class="gate-toolbar" aria-label="Gate palette">
+      <div class="palette-label"><span class="eyebrow">GATE PALETTE</span><span class="palette-help">Drag a gate onto a wire, or select it and click a wire.</span></div>
+      <div class="gate-groups">
+        <section class="gate-group"><h2>Single qubit</h2><div class="gate-list">
+          <button class="gate-tool" draggable="true" data-gate="H" title="Hadamard"><b>H</b><span>H</span></button>
+          <button class="gate-tool" draggable="true" data-gate="X" title="NOT gate (Pauli X)"><b>X</b><span>NOT / X</span></button>
+          <button class="gate-tool" draggable="true" data-gate="Y" title="Pauli Y"><b>Y</b><span>Y</span></button>
+          <button class="gate-tool" draggable="true" data-gate="Z" title="Pauli Z"><b>Z</b><span>Z</span></button>
+          <button class="gate-tool" draggable="true" data-gate="S" title="S phase"><b>S</b><span>S</span></button>
+          <button class="gate-tool" draggable="true" data-gate="T" title="T phase"><b>T</b><span>T</span></button>
+        </div></section>
+        <section class="gate-group"><h2>Rotations</h2><div class="gate-list">
+          <button class="gate-tool rotation" draggable="true" data-gate="RX" title="Rotate around X"><b>Rx</b><span>RX</span></button>
+          <button class="gate-tool rotation" draggable="true" data-gate="RY" title="Rotate around Y"><b>Ry</b><span>RY</span></button>
+          <button class="gate-tool rotation" draggable="true" data-gate="RZ" title="Rotate around Z"><b>Rz</b><span>RZ</span></button>
+        </div></section>
+        <section class="gate-group"><h2>Multi qubit</h2><div class="gate-list">
+          <button class="gate-tool multi" draggable="true" data-gate="CNOT" title="Controlled NOT"><b>⊕</b><span>CX</span></button>
+          <button class="gate-tool multi" draggable="true" data-gate="CZ" title="Controlled Z"><b>Z</b><span>CZ</span></button>
+          <button class="gate-tool multi" draggable="true" data-gate="SWAP" title="Swap"><b>×</b><span>SWAP</span></button>
+          <button class="gate-tool multi" draggable="true" data-gate="CCNOT" title="Toffoli"><b>CCX</b><span>CCX</span></button>
+        </div></section>
+        <section class="gate-group"><h2>Classical</h2><div class="gate-list">
+          <button class="gate-tool measure" draggable="true" data-gate="MEASURE" title="Measure qubit into a classical bit"><b>M</b><span>MEASURE</span></button>
+          <button class="gate-tool conditional" draggable="true" data-gate="IFX" title="Apply X when a classical bit matches"><b>X</b><span>IF X</span></button>
+          <button class="gate-tool conditional" draggable="true" data-gate="IFZ" title="Apply Z when a classical bit matches"><b>Z</b><span>IF Z</span></button>
+        </div></section>
+      </div>
+    </nav>
+
+    <section class="main-layout">
+      <section class="composer-panel panel">
+        <div class="panel-heading">
+          <div><p class="eyebrow">CIRCUIT</p><h1>Untitled circuit</h1></div>
+          <div class="register-controls">
+            <div class="qubit-controls"><button id="remove-qubit" class="icon-button" type="button" aria-label="Remove qubit">−</button><span><b id="qubit-count">3</b> qubits</span><button id="add-qubit" class="icon-button" type="button" aria-label="Add qubit">+</button></div>
+            <div class="qubit-controls classical-controls"><button id="remove-cbit" class="icon-button" type="button" aria-label="Remove classical bit">−</button><span><b id="cbit-count">2</b> classical bits</span><button id="add-cbit" class="icon-button" type="button" aria-label="Add classical bit">+</button></div>
+          </div>
+        </div>
+        <div class="circuit-hint"><span class="hint-icon">↳</span><span id="tool-hint">Choose a gate above, then drop it onto a wire.</span><button id="cancel-tool" class="text-button" type="button" hidden>Cancel</button></div>
+        <div class="circuit-scroll">
+          <div id="circuit-grid" class="circuit-grid" aria-label="Quantum circuit grid"></div>
+        </div>
+        <div class="circuit-footer"><span><kbd>q0</kbd> is the least-significant qubit</span><span>One column is one circuit step</span></div>
+      </section>
+
+      <aside class="side-column">
+        <section class="panel inspector-panel">
+          <div class="panel-heading compact"><div><p class="eyebrow">GATE SETTINGS</p><h2 id="inspector-title">No gate selected</h2></div><span class="selection-icon">⌘</span></div>
+          <div id="inspector-empty" class="empty-inspector">Select a gate in the circuit to edit its qubits or rotation angle.</div>
+          <div id="inspector-fields" class="inspector-fields" hidden></div>
+          <button id="delete-gate" class="button delete-button" type="button" hidden>Remove gate from circuit</button>
+        </section>
+        <section class="panel results-panel">
+          <div class="panel-heading compact"><div><p class="eyebrow">SIMULATION</p><h2>Measurement results</h2></div><span class="shot-badge"><span id="shot-count">1,000</span> shots</span></div>
+          <label class="shots-setting" for="shots-input">Shots <input id="shots-input" type="number" min="1" max="100000" step="100" value="1000"></label>
+          <div id="result-placeholder" class="result-placeholder">Arrange gates on the wires, then press <b>Run circuit</b>.</div>
+          <div id="result-content" hidden></div>
+          <p class="error-message" id="request-error" role="alert" hidden></p>
+          <details class="json-details"><summary>View generated JSON</summary><pre id="request-json" class="json-preview"></pre></details>
+          <details class="json-details response-details"><summary>View full engine response</summary><pre id="response-json" class="json-preview"></pre></details>
+        </section>
+      </aside>
+    </section>
+    <footer class="app-footer">Local state-vector simulation · Powered by the existing C++ / WebAssembly engine</footer>
+  </main>
+</body>
+</html>

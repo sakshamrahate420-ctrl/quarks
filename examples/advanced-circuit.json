@@ -1,0 +1,20 @@
+{
+  "protocol_version": 1,
+  "num_qubits": 3,
+  "gates": [
+    { "type": "H", "target": 0 },
+    { "type": "RX", "target": 1, "angle": 0.6283185307179586 },
+    { "type": "RY", "target": 2, "angle": -0.39269908169872414 },
+    { "type": "CNOT", "control": 0, "target": 1 },
+    { "type": "RZ", "target": 1, "angle": 1.0471975511965976 },
+    { "type": "CZ", "control": 1, "target": 2 },
+    { "type": "SWAP", "control": 0, "target": 2 },
+    { "type": "CCNOT", "control": 0, "control2": 1, "target": 2 }
+  ],
+  "options": {
+    "include_statevector": true,
+    "include_snapshots": false,
+    "measurement_shots": 4096,
+    "seed": 42
+  }
+}

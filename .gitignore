@@ -1,0 +1,14 @@
+/build/
+/.tools/
+/cmake-build-*/
+*.o
+*.a
+*.wasm
+*.mjs.map
+*.js.map
+.DS_Store
+
+# QUARKS standalone frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/

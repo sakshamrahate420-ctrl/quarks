@@ -1,0 +1,22 @@
+{
+  "protocol_version": 1,
+  "num_qubits": 3,
+  "num_clbits": 2,
+  "gates": [
+    { "type": "RY", "target": 0, "angle": 1.0471975511965976 },
+    { "type": "H", "target": 1 },
+    { "type": "CNOT", "control": 1, "target": 2 },
+    { "type": "CNOT", "control": 0, "target": 1 },
+    { "type": "H", "target": 0 },
+    { "type": "MEASURE", "target": 0, "classical_bit": 0 },
+    { "type": "MEASURE", "target": 1, "classical_bit": 1 },
+    { "type": "X", "target": 2, "condition": { "bit": 1, "equals": 1 } },
+    { "type": "Z", "target": 2, "condition": { "bit": 0, "equals": 1 } }
+  ],
+  "options": {
+    "include_statevector": true,
+    "include_snapshots": false,
+    "measurement_shots": 1000,
+    "seed": 42
+  }
+}

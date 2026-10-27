@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A small browser-based quantum circuit simulator powered by C++ and WebAssembly.">
+  <title>QuantumLab — WASM Demo</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <p class="eyebrow">C++20 · WebAssembly · State-vector simulation</p>
+      <h1>QuantumLab</h1>
+      <p class="subtitle">A minimal browser demo for the QuantumLab engine. The circuit is simulated in this browser; no simulation backend is used.</p>
+      <div class="status-row">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text" role="status" aria-live="polite">Loading WebAssembly module…</span>
+      </div>
+    </header>
+
+    <section class="panel" aria-labelledby="request-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Protocol v1</p>
+          <h2 id="request-title">Circuit request</h2>
+        </div>
+        <button id="load-bell" class="button button-secondary" type="button">Load Bell circuit</button>
+      </div>
+      <label for="request-input">JSON request</label>
+      <textarea id="request-input" spellcheck="false" autocapitalize="off">{
+  "protocol_version": 1,
+  "num_qubits": 2,
+  "gates": [
+    { "type": "H", "target": 0 },
+    { "type": "CNOT", "control": 0, "target": 1 }
+  ],
+  "options": {
+    "include_statevector": true,
+    "include_snapshots": true,
+    "measurement_shots": 1000,
+    "seed": 42
+  }
+}</textarea>
+      <div class="actions">
+        <button id="simulate" class="button button-primary" type="button" disabled>Simulate circuit</button>
+        <span class="hint">Run locally in the browser</span>
+      </div>
+      <p class="convention"><strong>Qubit convention:</strong> q0 is the least-significant bit. Basis-state strings display q(n−1) on the left and q0 on the right. Thus X on q0 changes |00⟩ to |01⟩.</p>
+    </section>
+
+    <section class="panel" aria-labelledby="response-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Structured response</p>
+          <h2 id="response-title">Simulation result</h2>
+        </div>
+        <button id="copy-result" class="button button-secondary" type="button" disabled>Copy JSON</button>
+      </div>
+      <pre id="result-output" class="output" aria-live="polite">Waiting for the engine to load.</pre>
+    </section>
+    <footer>
+      <p>Ideal pure-state simulator for learning and experimentation. Not a quantum hardware interface or a fault-tolerant quantum computer.</p>
+    </footer>
+  </main>
+</body>
+</html>
