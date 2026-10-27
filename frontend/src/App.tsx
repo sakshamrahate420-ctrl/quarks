@@ -378,7 +378,7 @@ function Editor({ circuits, setCircuits, active, setActive, notify, onRun }: { c
   const [stepIndex, setStepIndex] = useState(-1);
   const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
   const [shots, setShots] = useState(1024);
-  const [resultTab, setResultTab] = useState<'statevector' | 'histogram' | 'qsphere'>('qsphere');
+  const [resultTab, setResultTab] = useState<'statevector' | 'histogram'>('statevector');
   const [isRunning, setIsRunning] = useState(false);
   const [isAutoUpdating, setIsAutoUpdating] = useState(false);
   const [simulationError, setSimulationError] = useState('');
@@ -562,7 +562,7 @@ function Editor({ circuits, setCircuits, active, setActive, notify, onRun }: { c
     try {
       const result = await simulateCircuit({ circuit: toEngineCircuit(active), shots });
       setSimulationResult(result);
-      setResultTab(result.statevector ? 'qsphere' : 'statevector');
+      setResultTab('statevector');
       setSimulation('ready');
       setStepIndex(active.gates.length - 1);
       onRun();
@@ -788,10 +788,11 @@ function Editor({ circuits, setCircuits, active, setActive, notify, onRun }: { c
         </div>
         <div className="side-section"><div className="property-row"><span>Qubits</span><strong data-testid="text-qubit-count">{active.qubits} / 5</strong></div><div className="property-row"><span>Classical bits</span><strong>{active.classicalBits}</strong></div><div className="property-row"><span>Operations</span><strong>{active.gates.length}</strong></div></div>
       </aside>
+      <QSphereColumn result={simulationResult} stepIndex={stepIndex}/>
     </div>
   </main>;
 }
-function SimulationResultsPanel({ result, stepIndex, activeTab, onTabChange, circuitName, notify }: { result: SimulationResult; stepIndex: number; activeTab: 'statevector' | 'histogram' | 'qsphere'; onTabChange: (tab: 'statevector' | 'histogram' | 'qsphere') => void; circuitName: string; notify: (message: string) => void }) {
+function SimulationResultsPanel({ result, stepIndex, activeTab, onTabChange, circuitName, notify }: { result: SimulationResult; stepIndex: number; activeTab: 'statevector' | 'histogram'; onTabChange: (tab: 'statevector' | 'histogram') => void; circuitName: string; notify: (message: string) => void }) {
   const snapshot = result.snapshots.find((item) => item.gateIndex === stepIndex)
     ?? result.snapshots.find((item) => item.gateIndex === -1)
     ?? result.snapshots[result.snapshots.length - 1];
@@ -819,7 +820,6 @@ function SimulationResultsPanel({ result, stepIndex, activeTab, onTabChange, cir
     <div className="result-tabs" role="tablist" aria-label="Simulation result views">
       <button className={activeTab === 'statevector' ? 'active' : ''} role="tab" aria-selected={activeTab === 'statevector'} onClick={() => onTabChange('statevector')} data-testid="tab-result-statevector">State</button>
       <button className={activeTab === 'histogram' ? 'active' : ''} role="tab" aria-selected={activeTab === 'histogram'} onClick={() => onTabChange('histogram')} data-testid="tab-result-histogram">Counts</button>
-      <button className={activeTab === 'qsphere' ? 'active' : ''} role="tab" aria-selected={activeTab === 'qsphere'} onClick={() => onTabChange('qsphere')} disabled={!result.statevector} title={!result.statevector ? "QSphere phase view requires a pure statevector" : undefined} data-testid="tab-result-qsphere">QSphere</button>
     </div>
     {activeTab === 'statevector' && <div role="tabpanel" data-testid="panel-result-statevector">
       <p className="result-explainer">{result.statevector ? `Probability = |amplitude|². Values shown for ${stepIndex < 0 ? "the initial state" : `operation ${stepIndex + 1}`}.` : `Probabilities averaged over ${result.shots.toLocaleString()} measured shot trajectories. A single statevector amplitude is not defined for this ensemble.`}</p>
@@ -867,8 +867,45 @@ function SimulationResultsPanel({ result, stepIndex, activeTab, onTabChange, cir
       </div>}
       <div className="measurement-list">{histogram.map((row) => <div className="property-row" key={row.bitstring}><span>{row.bitstring}</span><strong>{row.count} · {row.percentage.toFixed(1)}%</strong></div>)}</div>
     </div>}
-    {activeTab === 'qsphere' && <div role="tabpanel" data-testid="panel-result-qsphere">{result.statevector ? <Suspense fallback={<div className="qsphere-loading">Loading QSphere renderer…</div>}><QSphere states={states}/></Suspense> : <div className="empty">QSphere phase visualization is not available for measured trajectory results.</div>}</div>}
   </div>;
+}
+
+function QSphereColumn({ result, stepIndex }: { result: SimulationResult | null; stepIndex: number }) {
+  const snapshot = result?.snapshots.find((item) => item.gateIndex === stepIndex)
+    ?? result?.snapshots.find((item) => item.gateIndex === -1)
+    ?? result?.snapshots[result.snapshots.length - 1];
+  const states = result?.probabilities.map((state, index) => ({
+    ...state,
+    amplitude: snapshot?.statevector[index] ?? state.amplitude,
+    probability: snapshot?.probabilities[index] ?? state.probability,
+  })) ?? [];
+  const hasStatevector = Boolean(result?.statevector);
+  const norm = states.reduce((sum, state) => sum + state.probability, 0);
+  const entropy = states.reduce((sum, state) => state.probability > 0 ? sum - state.probability * Math.log2(state.probability) : sum, 0);
+  const support = states.filter((state) => state.probability > 1e-9);
+  const dominant = [...states].sort((a, b) => b.probability - a.probability)[0];
+  const averageWeight = states.reduce((sum, state) => sum + state.probability * state.bitstring.split('').filter((bit) => bit === '1').length, 0);
+  return <aside className="qsphere-column" aria-label="QSphere state explorer" data-testid="column-qsphere">
+    <div className="qsphere-column-heading"><div><div className="panel-label">State explorer</div><h2>QSphere</h2></div><span className={`status-pill ${hasStatevector ? 'qsphere-ready' : ''}`}>{hasStatevector ? 'LIVE STATE' : 'WAITING'}</span></div>
+    {hasStatevector ? <>
+      <Suspense fallback={<div className="qsphere-loading">Loading 3D state renderer…</div>}><QSphere states={states}/></Suspense>
+      <div className="qsphere-metrics" aria-label="State diagnostics" data-testid="qsphere-metrics">
+        <div><span>Norm</span><strong>{norm.toFixed(6)}</strong></div>
+        <div><span>Entropy</span><strong>{entropy.toFixed(3)} bits</strong></div>
+        <div><span>Occupied states</span><strong>{support.length} / {states.length}</strong></div>
+        <div><span>Mean excitations</span><strong>{averageWeight.toFixed(3)}</strong></div>
+      </div>
+      <section className="qsphere-inspector"><div className="qsphere-inspector-title"><strong>Basis amplitudes</strong><span>sorted by probability</span></div>
+        {dominant && <div className="qsphere-dominant"><span>Most probable</span><strong>|{dominant.bitstring}⟩ · {(dominant.probability * 100).toFixed(2)}%</strong></div>}
+        <div className="qsphere-state-list" data-testid="qsphere-state-list">{[...states].sort((a, b) => b.probability - a.probability).map((state) => {
+          const amplitude = state.amplitude ?? { re: 0, im: 0 };
+          const phase = Math.atan2(amplitude.im, amplitude.re);
+          return <div className="qsphere-state-row" key={state.bitstring}><span className="qsphere-state-label">|{state.bitstring}⟩</span><span className="qsphere-state-amplitude">{amplitude.re.toFixed(3)} {amplitude.im < 0 ? '−' : '+'} {Math.abs(amplitude.im).toFixed(3)}i</span><span className="qsphere-state-prob">{(state.probability * 100).toFixed(1)}%</span><span className="qsphere-phase-track"><i style={{ left: `${((phase + Math.PI) / (2 * Math.PI)) * 100}%` }}/></span></div>;
+        })}</div>
+      </section>
+      <p className="qsphere-column-note">Inspect marker position, magnitude, and phase in 3D. The diagnostics describe the currently selected simulation step.</p>
+    </> : <div className="qsphere-waiting" data-testid="empty-qsphere-column"><div className="qsphere-waiting-orb">ψ</div><strong>{result ? 'Pure state unavailable' : 'Run a circuit to explore its state'}</strong><p>{result ? 'This circuit includes measurement trajectories. Probability and counts are available in Simulation results; a single pure-state QSphere is undefined for that ensemble.' : 'The QSphere will show basis states, amplitude magnitude, and phase after the circuit runs.'}</p></div>}
+  </aside>;
 }
 function Circuits({ circuits, onOpen, onNew, onDelete }: { circuits: Circuit[]; onOpen: (c: Circuit) => void; onNew: () => void; onDelete: (c: Circuit) => void }) {
   return <main className="page"><div className="eyebrow"><Layers3 size={13}/> Local project shelf</div><div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', gap: 15 }}><div><h1>My circuits</h1><p className="lead">Projects saved in this browser. Nothing here is synced or uploaded.</p></div><button className="button primary" onClick={onNew} data-testid="button-new-local-circuit"><Plus size={15}/> New circuit</button></div>
