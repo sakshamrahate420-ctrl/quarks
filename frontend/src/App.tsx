@@ -754,7 +754,25 @@ function Editor({ circuits, setCircuits, active, setActive, notify, onRun }: { c
             })}
           </svg>
           {active.classicalBits === 0 && <button className="add-classical-wire" onClick={() => addClassicalBitAt(0)} data-testid="button-add-first-classical-bit"><Plus size={13}/> Add classical bit</button>}
-        </div></div>
+        </div>
+        {active.gates.length === 0 && <div className="canvas-empty empty-circuit-hub" data-testid="empty-circuit-starters">
+          <div className="empty-hub-orbit" aria-hidden="true"><span>ψ</span><i>H</i><b>+</b></div>
+          <div className="eyebrow"><Sparkles size={13}/> A clear canvas, ready for you</div>
+          <h2>Choose a starting point</h2>
+          <p>Load a small circuit to explore, or place gates yourself on the wires above.</p>
+          <div className="canvas-starters">
+            {[
+              { id: 'superposition', title: 'Superposition', glyphs: ['H'], detail: 'One qubit · equal amplitudes' },
+              { id: 'bell-pair', title: 'Bell pair', glyphs: ['H', 'CNOT'], detail: 'Two qubits · entangled' },
+              { id: 'phase-rotation', title: 'Phase rotations', glyphs: ['H', 'S', 'RY'], detail: 'Explore phase and angle' },
+            ].map((starter) => <button type="button" className="canvas-starter" key={starter.id} onClick={() => { setActive(makePreset(starter.id)); setSelected(null); }} data-testid={`button-start-${starter.id}`}>
+              <span className="starter-gates" aria-hidden="true">{starter.glyphs.map((glyph, index) => <span key={`${starter.id}-${glyph}-${index}`}><i>{glyph}</i>{index < starter.glyphs.length - 1 && <b>·</b>}</span>)}</span>
+              <strong>{starter.title}</strong><small>{starter.detail}</small>
+            </button>)}
+          </div>
+          <span className="empty-hub-hint">Tip: choose any gate, then click a qubit wire to place it.</span>
+        </div>}
+        </div>
         <div className="canvas-controls"><button className="button subtle" onClick={() => { const clean = active.gates.map((g, i) => ({ ...g, column: i })); snapshot({ ...active, gates: clean }); }} data-testid="button-align-gates"><Activity size={13}/> Compact columns</button><span className="toolbar-spacer"/><span className="run-note" data-testid="text-keyboard-shortcuts">Ctrl/Cmd+S save · Z undo · Delete removes selection</span></div>
       </section>
       <aside className="editor-side">
