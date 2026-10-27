@@ -306,6 +306,7 @@ function AppLink({ href, children, className, testid }: { href: string; children
 }
 function Shell({ children, theme, onTheme, title }: { children: ReactNode; theme: Theme; onTheme: (theme: Theme) => void; title: string }) {
   const [location, setLocation] = useLocation();
+  const [editorNavigationOpen, setEditorNavigationOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
@@ -317,6 +318,8 @@ function Shell({ children, theme, onTheme, title }: { children: ReactNode; theme
     window.addEventListener('keydown', listener); return () => window.removeEventListener('keydown', listener);
   }, []);
   useEffect(() => { if (searchOpen) searchRef.current?.focus(); }, [searchOpen]);
+  const isEditorPage = location.split('?')[0] === '/editor';
+  useEffect(() => { if (isEditorPage) setEditorNavigationOpen(false); }, [location, isEditorPage]);
   const choices = [
     ...NAV,
     { href: '/settings', label: 'Settings', icon: Settings },
@@ -325,7 +328,7 @@ function Shell({ children, theme, onTheme, title }: { children: ReactNode; theme
     ...['Qubit', 'Superposition', 'Entanglement', 'Statevector', 'Probability', 'Measurement', 'QSphere', 'OpenQASM'].map((topic) => ({ href: '/learn', label: `Help: ${topic}`, icon: CircleHelp })),
   ];
   const results = choices.filter((item) => item.label.toLowerCase().includes(search.toLowerCase()));
-  return <div className="app-shell">
+  return <div className={`app-shell${isEditorPage && !editorNavigationOpen ? ' editor-nav-collapsed' : ''}`}>
     <aside className="sidebar"><AppLink href="/" className="brand-link"><Logo/></AppLink>
       <div className="nav-label">Workspace</div>
       <nav aria-label="Primary navigation">{NAV.map(({ href, label, icon: Icon }) => <AppLink key={href} href={href} className={`nav-item ${location === href || (href !== '/' && location.startsWith(href)) ? 'active' : ''}`} testid={`nav-${label.toLowerCase().replaceAll(' ', '-')}`}><Icon size={17}/><span>{label}</span></AppLink>)}</nav>
@@ -334,7 +337,7 @@ function Shell({ children, theme, onTheme, title }: { children: ReactNode; theme
       <div className="sidebar-bottom"><div className="local-note"><strong><HardDrive size={14}/> Local by design</strong><p>Your circuits stay in this browser. No account or cloud sync is required.</p></div><button className="nav-item" onClick={() => onTheme(theme === 'dark' ? 'light' : 'dark')} data-testid="button-toggle-theme"><Moon size={17}/><span>Toggle appearance</span></button></div>
     </aside>
     <div className="main-column">
-      <header className="topbar"><div className="crumb"><span>QUARKS</span><span style={{ opacity: .45, margin: '0 8px' }}>/</span><span data-testid="text-page-title">{title}</span></div>
+      <header className="topbar"><div className="topbar-leading">{isEditorPage && <button type="button" className="icon-button editor-nav-toggle" onClick={() => setEditorNavigationOpen((open) => !open)} aria-label={editorNavigationOpen ? 'Hide navigation' : 'Show navigation'} aria-expanded={editorNavigationOpen} title={editorNavigationOpen ? 'Hide navigation for more workspace' : 'Show navigation'} data-testid="button-toggle-editor-navigation"><Menu size={16}/></button>}<div className="crumb"><span>QUARKS</span><span style={{ opacity: .45, margin: '0 8px' }}>/</span><span data-testid="text-page-title">{title}</span></div></div>
         <div className="top-actions"><button className="button subtle" onClick={() => setSearchOpen(true)} data-testid="button-open-search"><Search size={14}/> <span className="desktop-only">Search anything</span><kbd className="desktop-only">⌘ K</kbd></button><AppLink href="/settings" className="icon-button" testid="link-settings" aria-label="Settings"><Settings size={16}/></AppLink></div>
       </header>{children}
     </div>
