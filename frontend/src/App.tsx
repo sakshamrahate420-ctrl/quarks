@@ -774,6 +774,13 @@ function Editor({ circuits, setCircuits, active, setActive, notify, onRun }: { c
         </div>}
         </div>
         <div className="canvas-controls"><button className="button subtle" onClick={() => { const clean = active.gates.map((g, i) => ({ ...g, column: i })); snapshot({ ...active, gates: clean }); }} data-testid="button-align-gates"><Activity size={13}/> Compact columns</button><span className="toolbar-spacer"/><span className="run-note" data-testid="text-keyboard-shortcuts">Ctrl/Cmd+S save · Z undo · Delete removes selection</span></div>
+        <section className={`workspace-results${simulationResult ? ' has-results' : ' is-idle'}`} aria-label="Circuit simulation results">
+          <div className="workspace-results-heading"><div><div className="panel-label">Simulation results</div><span className="run-note">State probabilities and shot counts for this circuit</span></div><span className="status-pill">STATEVECTOR · DEMO</span></div>
+          <div className="shot-control"><label htmlFor="shot-count">Measurement shots</label><input id="shot-count" type="number" min="1" max="10000" value={shots} onChange={(event) => setShots(Math.min(10000, Math.max(1, Number(event.target.value) || 1)))} data-testid="input-shot-count"/></div>
+          {simulationResult ? <div data-testid="status-simulation"><div className="run-note workspace-engine-note"><strong>{simulation === 'ready' ? 'Simulation complete' : `Step ${Math.max(0, stepIndex + 1)} of ${active.gates.length}`}</strong> · {simulationResult.engine} · Local simulation, not quantum hardware execution.</div>
+            <SimulationResultsPanel result={simulationResult} stepIndex={stepIndex} activeTab={resultTab} onTabChange={setResultTab} circuitName={active.name} notify={notify}/>
+          </div> : <div className="empty workspace-results-empty" data-testid="empty-simulation">Run the circuit to view its state probabilities and measurement counts.</div>}
+        </section>
       </section>
       <aside className="editor-side">
         <div className="side-tabs" role="tablist"><button className={`tab-button ${codeTab === 'qasm' ? 'active' : ''}`} onClick={() => setCodeTab('qasm')} role="tab" aria-selected={codeTab === 'qasm'} data-testid="tab-openqasm">OpenQASM</button><button className={`tab-button ${codeTab === 'python' ? 'active' : ''}`} onClick={() => setCodeTab('python')} role="tab" aria-selected={codeTab === 'python'} data-testid="tab-python">Python</button><div className="toolbar-spacer"/><button className="icon-button" title="Copy generated code" onClick={copyCode} data-testid="button-copy-code"><Copy size={14}/></button><button className="icon-button" title="Download generated code" onClick={() => downloadText(`${sanitize(active.name)}.${codeTab === 'qasm' ? 'qasm' : 'py'}`, code)} data-testid="button-download-code"><ArrowDownToLine size={14}/></button></div>
@@ -798,14 +805,6 @@ function Editor({ circuits, setCircuits, active, setActive, notify, onRun }: { c
             <p className="run-note">{gateInfo[selectedGate.kind]}</p>
             <div style={{ display: 'flex', gap: 7, marginTop: 10 }}><button className="button" onClick={duplicateSelected} data-testid="button-duplicate-gate"><Copy size={13}/> Duplicate</button><button className="button danger" onClick={deleteSelected} data-testid="button-delete-gate"><Trash2 size={13}/> Delete</button></div>
           </> : <div className="empty" data-testid="empty-gate-selection">Select a gate to inspect or edit its properties.</div>}
-        </div>
-        <div className="side-section"><div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}><div className="panel-label" style={{ margin: 0 }}>Simulation results</div><span className="status-pill">STATEVECTOR · DEMO</span></div>
-          <div className="shot-control"><label htmlFor="shot-count">Measurement shots</label><input id="shot-count" type="number" min="1" max="10000" value={shots} onChange={(event) => setShots(Math.min(10000, Math.max(1, Number(event.target.value) || 1)))} data-testid="input-shot-count"/></div>
-          {simulationResult ? <div data-testid="status-simulation"><div className="notice simulation-notice"><strong>{simulation === 'ready' ? 'Simulation complete' : `Step ${Math.max(0, stepIndex + 1)} of ${active.gates.length}`}</strong><br/><span>{simulationResult.engine}</span></div>
-            <div className="run-note">This local C++/WebAssembly simulation is not quantum hardware execution. Mid-circuit measurements use seeded shot trajectories.</div>
-            <SimulationResultsPanel result={simulationResult} stepIndex={stepIndex} activeTab={resultTab} onTabChange={setResultTab} circuitName={active.name} notify={notify}/>
-          </div> : <div className="empty" style={{ marginTop: 12 }} data-testid="empty-simulation">Run the circuit to open its QSphere and inspect the simulated state. Measured circuits show trajectory-averaged probabilities instead.</div>}
-          <p className="run-note">Engine: QuantumLab C++ compiled to WebAssembly.</p>
         </div>
         <div className="side-section"><div className="property-row"><span>Qubits</span><strong data-testid="text-qubit-count">{active.qubits} / 5</strong></div><div className="property-row"><span>Classical bits</span><strong>{active.classicalBits}</strong></div><div className="property-row"><span>Operations</span><strong>{active.gates.length}</strong></div></div>
       </aside>
