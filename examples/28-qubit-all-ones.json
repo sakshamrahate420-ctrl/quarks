@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "id": "test-28-qubit",
   "name": "28-Qubit All-Ones State",
+  "updatedAt": "2026-10-29T00:00:00.000Z",
   "qubits": 28,
   "classicalBits": 0,
   "quantumRegisters": [
