@@ -82,6 +82,8 @@ The source is designed for native testing and Emscripten compilation. Run the co
 
 The project includes the QUARKS drag-and-drop circuit composer in `frontend/`. It uses the existing QuantumLab C++/WebAssembly engine through the stable protocol adapter in `web-demo/quantumlab-api.js`; circuits and simulation stay local in the browser.
 
+The composer supports up to 28 qubits for building and exporting circuits. To keep ordinary laptop browsers stable, dense state-vector simulation is capped at 16 qubits and reports a resource message above that limit. A dense 28-qubit state alone needs about 4 GiB for complex amplitudes, before simulator snapshots and browser-side data.
+
 ### Launch on Windows
 
 Run `run-demo.bat` from File Explorer or a terminal. The script builds the WASM engine, installs the frontend packages on first launch, and starts Vite at <http://127.0.0.1:5173/>. Keep the terminal open while using the IDE. In the editor, **Focus canvas** hides the gate palette and inspector; **Show panels** brings them back.

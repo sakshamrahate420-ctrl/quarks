@@ -6,7 +6,7 @@ import type {
   QuantumRegister,
 } from "./types";
 
-export const MAX_QUBITS = 5;
+export const MAX_QUBITS = 28;
 export const MAX_CLASSICAL_BITS = 16;
 export const SUPPORTED_GATES: readonly GateType[] = [
   "X",

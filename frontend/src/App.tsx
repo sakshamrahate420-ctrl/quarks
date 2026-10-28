@@ -22,6 +22,7 @@ import {
   deleteQuantumRegister as deleteEngineQuantumRegister,
   insertClassicalBit as insertEngineClassicalBit,
   insertQubit as insertEngineQubit,
+  MAX_QUBITS,
   removeClassicalBit as removeEngineClassicalBit,
   removeQubit as removeEngineQubit,
 } from '@/features/circuit/model';
@@ -55,6 +56,8 @@ type Theme = 'light' | 'dark' | 'system';
 const qc = new QueryClient();
 const STORE_KEY = 'quarks.local.circuits.v1';
 const DRAFT_KEY = 'quarks.local.draft.v1';
+const SIMULATOR_MAX_QUBITS = 16;
+const simulatorLimitMessage = `This editor supports up to ${MAX_QUBITS} qubits. To protect browser memory, local statevector simulation is limited to ${SIMULATOR_MAX_QUBITS} qubits.`;
 const NAV = [
   { href: '/', label: 'Dashboard', icon: Grid2X2 },
   { href: '/editor', label: 'Circuit editor', icon: CircuitBoard },
@@ -153,7 +156,7 @@ function normalizeUiCircuit(value: unknown): Circuit | null {
     || !Number.isInteger(item.qubits) || !Number.isInteger(item.classicalBits) || !Array.isArray(item.gates)) return null;
   const qubits = item.qubits as number;
   const classicalBits = item.classicalBits as number;
-  if (qubits < 1 || qubits > 5 || classicalBits < 0 || classicalBits > 16) return null;
+  if (qubits < 1 || qubits > MAX_QUBITS || classicalBits < 0 || classicalBits > 16) return null;
   const quantumRegisters = Array.isArray(item.quantumRegisters) && item.quantumRegisters.length
     ? item.quantumRegisters : [{ id: makeId(), name: 'q', start: 0, size: qubits }];
   const classicalRegisters = Array.isArray(item.classicalRegisters) && item.classicalRegisters.length
@@ -482,6 +485,10 @@ function Editor({ circuits, setCircuits, active, setActive, notify, onRun }: { c
     setSimulationResult(null);
     setSimulation('idle');
     setSimulationError('');
+    if (active.qubits > SIMULATOR_MAX_QUBITS) {
+      setSimulationError(simulatorLimitMessage);
+      return;
+    }
     const timer = window.setTimeout(() => {
       setIsAutoUpdating(true);
       void simulateCircuit({ circuit: toEngineCircuit(active), shots })
@@ -561,7 +568,9 @@ function Editor({ circuits, setCircuits, active, setActive, notify, onRun }: { c
   };
   const startSimulation = async () => {
     if (!active.gates.length) { notify('Add at least one operation before running a preview.'); return; }
+    if (active.qubits > SIMULATOR_MAX_QUBITS) { setSimulationError(simulatorLimitMessage); notify(simulatorLimitMessage); return; }
     setIsRunning(true);
+    setSimulationError('');
     try {
       const result = await simulateCircuit({ circuit: toEngineCircuit(active), shots });
       setSimulationResult(result);
@@ -573,7 +582,9 @@ function Editor({ circuits, setCircuits, active, setActive, notify, onRun }: { c
     } catch (error) {
       setSimulation('idle');
       setSimulationResult(null);
-      notify(error instanceof Error ? error.message : 'Simulation could not run.');
+      const message = error instanceof Error ? error.message : 'Simulation could not run.';
+      setSimulationError(message);
+      notify(message);
     } finally {
       setIsRunning(false);
     }
@@ -677,11 +688,11 @@ function Editor({ circuits, setCircuits, active, setActive, notify, onRun }: { c
           <div className="wire-context-heading"><strong>{wireMenu.kind === 'quantum' ? `q[${wireMenu.index}]` : `c[${wireMenu.index}]`}</strong><span>in {selectedWireRegister.name}</span><button className="icon-button" onClick={() => setWireMenu(null)} aria-label="Close wire options" data-testid="button-close-wire-options"><XIcon size={13}/></button></div>
           <div className="wire-context-actions">
             {wireMenu.kind === 'quantum' ? <>
-              <button onClick={() => addQubitAt(wireMenu.index, selectedWireRegister.id)} disabled={active.qubits >= 5} data-testid="button-insert-qubit-before">Add qubit before</button>
-              <button onClick={() => addQubitAt(wireMenu.index + 1, selectedWireRegister.id)} disabled={active.qubits >= 5} data-testid="button-insert-qubit-after">Add qubit after</button>
+              <button onClick={() => addQubitAt(wireMenu.index, selectedWireRegister.id)} disabled={active.qubits >= MAX_QUBITS} data-testid="button-insert-qubit-before">Add qubit before</button>
+              <button onClick={() => addQubitAt(wireMenu.index + 1, selectedWireRegister.id)} disabled={active.qubits >= MAX_QUBITS} data-testid="button-insert-qubit-after">Add qubit after</button>
               <button onClick={() => deleteQubitAt(wireMenu.index)} disabled={active.qubits <= 1} data-testid="button-delete-selected-qubit">Delete this qubit</button>
-              <button onClick={() => addQubitRegisterAt(wireMenu.index)} disabled={active.qubits >= 5} data-testid="button-insert-register-before">Add register before</button>
-              <button onClick={() => addQubitRegisterAt(wireMenu.index + 1)} disabled={active.qubits >= 5} data-testid="button-insert-register-after">Add register after</button>
+              <button onClick={() => addQubitRegisterAt(wireMenu.index)} disabled={active.qubits >= MAX_QUBITS} data-testid="button-insert-register-before">Add register before</button>
+              <button onClick={() => addQubitRegisterAt(wireMenu.index + 1)} disabled={active.qubits >= MAX_QUBITS} data-testid="button-insert-register-after">Add register after</button>
               <button onClick={() => deleteQubitRegister(selectedWireRegister)} disabled={active.quantumRegisters.length <= 1} data-testid="button-delete-selected-register">Delete register</button>
             </> : <>
               <button onClick={() => addClassicalBitAt(wireMenu.index, selectedWireRegister.id)} disabled={active.classicalBits >= 16} data-testid="button-insert-classical-before">Add bit before</button>
@@ -774,9 +785,10 @@ function Editor({ circuits, setCircuits, active, setActive, notify, onRun }: { c
         </div>}
         </div>
         <div className="canvas-controls"><button className="button subtle" onClick={() => { const clean = active.gates.map((g, i) => ({ ...g, column: i })); snapshot({ ...active, gates: clean }); }} data-testid="button-align-gates"><Activity size={13}/> Compact columns</button><span className="toolbar-spacer"/><span className="run-note" data-testid="text-keyboard-shortcuts">Ctrl/Cmd+S save · Z undo · Delete removes selection</span></div>
-        <section className={`workspace-results${simulationResult ? ' has-results' : ' is-idle'}`} aria-label="Circuit simulation results">
-          <div className="workspace-results-heading"><div><div className="panel-label">Simulation results</div><span className="run-note">State probabilities and shot counts for this circuit</span></div><span className="status-pill">STATEVECTOR · DEMO</span></div>
+        <section className={`workspace-results${simulationResult ? ' has-results' : simulationError ? ' has-error' : ' is-idle'}`} aria-label="Circuit simulation results">
+          <div className="workspace-results-heading"><div><div className="panel-label">Simulation results</div><span className="run-note">Circuits support up to {MAX_QUBITS} qubits; local statevector simulation supports up to {SIMULATOR_MAX_QUBITS}.</span></div><span className="status-pill">STATEVECTOR · DEMO</span></div>
           <div className="shot-control"><label htmlFor="shot-count">Measurement shots</label><input id="shot-count" type="number" min="1" max="10000" value={shots} onChange={(event) => setShots(Math.min(10000, Math.max(1, Number(event.target.value) || 1)))} data-testid="input-shot-count"/></div>
+          {simulationError && <div className="notice simulation-limit-notice" role="status" data-testid="notice-simulation-limit">{simulationError}</div>}
           {simulationResult ? <div data-testid="status-simulation"><div className="run-note workspace-engine-note"><strong>{simulation === 'ready' ? 'Simulation complete' : `Step ${Math.max(0, stepIndex + 1)} of ${active.gates.length}`}</strong> · {simulationResult.engine} · Local simulation, not quantum hardware execution.</div>
             <SimulationResultsPanel result={simulationResult} stepIndex={stepIndex} activeTab={resultTab} onTabChange={setResultTab} circuitName={active.name} notify={notify}/>
           </div> : <div className="empty workspace-results-empty" data-testid="empty-simulation">Run the circuit to view its state probabilities and measurement counts.</div>}
@@ -806,7 +818,7 @@ function Editor({ circuits, setCircuits, active, setActive, notify, onRun }: { c
             <div style={{ display: 'flex', gap: 7, marginTop: 10 }}><button className="button" onClick={duplicateSelected} data-testid="button-duplicate-gate"><Copy size={13}/> Duplicate</button><button className="button danger" onClick={deleteSelected} data-testid="button-delete-gate"><Trash2 size={13}/> Delete</button></div>
           </> : <div className="empty" data-testid="empty-gate-selection">Select a gate to inspect or edit its properties.</div>}
         </div>
-        <div className="side-section"><div className="property-row"><span>Qubits</span><strong data-testid="text-qubit-count">{active.qubits} / 5</strong></div><div className="property-row"><span>Classical bits</span><strong>{active.classicalBits}</strong></div><div className="property-row"><span>Operations</span><strong>{active.gates.length}</strong></div></div>
+        <div className="side-section"><div className="property-row"><span>Qubits</span><strong data-testid="text-qubit-count">{active.qubits} / {MAX_QUBITS}</strong></div><div className="property-row"><span>Classical bits</span><strong>{active.classicalBits}</strong></div><div className="property-row"><span>Operations</span><strong>{active.gates.length}</strong></div></div>
       </aside>
       <QSphereColumn result={simulationResult} stepIndex={stepIndex}/>
     </div>
@@ -821,6 +833,7 @@ function SimulationResultsPanel({ result, stepIndex, activeTab, onTabChange, cir
     amplitude: snapshot?.statevector[index] ?? state.amplitude,
     probability: snapshot?.probabilities[index] ?? state.probability,
   }));
+  const displayStates = [...states].sort((a, b) => b.probability - a.probability).slice(0, 64);
   const histogram = Object.entries(result.measurementCounts)
     .map(([bitstring, count]) => ({ bitstring, count, percentage: (count / result.shots) * 100 }))
     .sort((a, b) => b.count - a.count || a.bitstring.localeCompare(b.bitstring));
@@ -842,16 +855,16 @@ function SimulationResultsPanel({ result, stepIndex, activeTab, onTabChange, cir
       <button className={activeTab === 'histogram' ? 'active' : ''} role="tab" aria-selected={activeTab === 'histogram'} onClick={() => onTabChange('histogram')} data-testid="tab-result-histogram">Counts</button>
     </div>
     {activeTab === 'statevector' && <div role="tabpanel" data-testid="panel-result-statevector">
-      <p className="result-explainer">{result.statevector ? `Probability = |amplitude|². Values shown for ${stepIndex < 0 ? "the initial state" : `operation ${stepIndex + 1}`}.` : `Probabilities averaged over ${result.shots.toLocaleString()} measured shot trajectories. A single statevector amplitude is not defined for this ensemble.`}</p>
+      <p className="result-explainer">{result.statevector ? `Probability = |amplitude|². Values shown for ${stepIndex < 0 ? "the initial state" : `operation ${stepIndex + 1}`}.${states.length > displayStates.length ? ` Showing the top ${displayStates.length} of ${states.length.toLocaleString()} basis states.` : ''}` : `Probabilities averaged over ${result.shots.toLocaleString()} measured shot trajectories. A single statevector amplitude is not defined for this ensemble.`}</p>
       <div className="result-chart" aria-label="Basis state probability chart" data-testid="chart-statevector">
         <ResponsiveContainer width="100%" height={160}>
-          <BarChart data={states} margin={{ top: 8, right: 4, left: -22, bottom: 2 }}>
+          <BarChart data={displayStates} margin={{ top: 8, right: 4, left: -22, bottom: 2 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid, #333b4a)"/>
             <XAxis dataKey="bitstring" tick={{ fontSize: 9, fill: 'var(--chart-label, #a9b1c4)' }} />
             <YAxis domain={[0, 1]} tick={{ fontSize: 9, fill: 'var(--chart-label, #a9b1c4)' }} />
             <ChartTooltip formatter={(value: number | string) => [`${(Number(value) * 100).toFixed(2)}%`, 'Probability']} labelFormatter={(label) => `|${label}⟩`} />
             <Bar dataKey="probability" radius={[3, 3, 0, 0]}>
-              {states.map((state) => <Cell key={state.bitstring} fill={state.probability > 1e-9 ? '#8b76ee' : '#435064'} />)}
+              {displayStates.map((state) => <Cell key={state.bitstring} fill={state.probability > 1e-9 ? '#8b76ee' : '#435064'} />)}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
@@ -864,7 +877,7 @@ function SimulationResultsPanel({ result, stepIndex, activeTab, onTabChange, cir
       </div>
       <div className="state-table-wrap"><table className="state-table" aria-label="Statevector amplitude and probability values" data-testid="table-statevector">
         <thead><tr><th>Basis</th><th>Amplitude</th><th>Probability</th></tr></thead>
-        <tbody>{states.map((state) => <tr key={state.bitstring} data-testid={`row-state-${state.bitstring}`}><td>|{state.bitstring}⟩</td><td>{amplitudeText(state.amplitude)}</td><td>{(state.probability * 100).toFixed(2)}%</td></tr>)}</tbody>
+        <tbody>{displayStates.map((state) => <tr key={state.bitstring} data-testid={`row-state-${state.bitstring}`}><td>|{state.bitstring}⟩</td><td>{amplitudeText(state.amplitude)}</td><td>{(state.probability * 100).toFixed(2)}%</td></tr>)}</tbody>
       </table></div>
     </div>}
     {activeTab === 'histogram' && <div role="tabpanel" data-testid="panel-result-histogram">
@@ -902,22 +915,25 @@ function QSphereColumn({ result, stepIndex }: { result: SimulationResult | null;
   const hasStatevector = Boolean(result?.statevector);
   const norm = states.reduce((sum, state) => sum + state.probability, 0);
   const entropy = states.reduce((sum, state) => state.probability > 0 ? sum - state.probability * Math.log2(state.probability) : sum, 0);
-  const support = states.filter((state) => state.probability > 1e-9);
-  const dominant = [...states].sort((a, b) => b.probability - a.probability)[0];
+  const rankedStates = [...states].sort((a, b) => b.probability - a.probability);
+  const supportCount = states.reduce((count, state) => count + Number(state.probability > 1e-9), 0);
+  const dominant = rankedStates[0];
+  const sphereStates = rankedStates.filter((state) => state.probability > 1e-12).slice(0, 128);
+  const inspectorStates = rankedStates.slice(0, 64);
   const averageWeight = states.reduce((sum, state) => sum + state.probability * state.bitstring.split('').filter((bit) => bit === '1').length, 0);
   return <aside className="qsphere-column" aria-label="QSphere state explorer" data-testid="column-qsphere">
     <div className="qsphere-column-heading"><div><div className="panel-label">State explorer</div><h2>QSphere</h2></div><span className={`status-pill ${hasStatevector ? 'qsphere-ready' : ''}`}>{hasStatevector ? 'LIVE STATE' : 'WAITING'}</span></div>
     {hasStatevector ? <>
-      <Suspense fallback={<div className="qsphere-loading">Loading 3D state renderer…</div>}><QSphere states={states}/></Suspense>
+      <Suspense fallback={<div className="qsphere-loading">Loading 3D state renderer…</div>}><QSphere states={sphereStates}/></Suspense>
       <div className="qsphere-metrics" aria-label="State diagnostics" data-testid="qsphere-metrics">
         <div><span>Norm</span><strong>{norm.toFixed(6)}</strong></div>
         <div><span>Entropy</span><strong>{entropy.toFixed(3)} bits</strong></div>
-        <div><span>Occupied states</span><strong>{support.length} / {states.length}</strong></div>
+        <div><span>Occupied states</span><strong>{supportCount} / {states.length}</strong></div>
         <div><span>Mean excitations</span><strong>{averageWeight.toFixed(3)}</strong></div>
       </div>
-      <section className="qsphere-inspector"><div className="qsphere-inspector-title"><strong>Basis amplitudes</strong><span>sorted by probability</span></div>
+      <section className="qsphere-inspector"><div className="qsphere-inspector-title"><strong>Basis amplitudes</strong><span>{states.length > inspectorStates.length ? `top ${inspectorStates.length} by probability` : 'sorted by probability'}</span></div>
         {dominant && <div className="qsphere-dominant"><span>Most probable</span><strong>|{dominant.bitstring}⟩ · {(dominant.probability * 100).toFixed(2)}%</strong></div>}
-        <div className="qsphere-state-list" data-testid="qsphere-state-list">{[...states].sort((a, b) => b.probability - a.probability).map((state) => {
+        <div className="qsphere-state-list" data-testid="qsphere-state-list">{inspectorStates.map((state) => {
           const amplitude = state.amplitude ?? { re: 0, im: 0 };
           const phase = Math.atan2(amplitude.im, amplitude.re);
           return <div className="qsphere-state-row" key={state.bitstring}><span className="qsphere-state-label">|{state.bitstring}⟩</span><span className="qsphere-state-amplitude">{amplitude.re.toFixed(3)} {amplitude.im < 0 ? '−' : '+'} {Math.abs(amplitude.im).toFixed(3)}i</span><span className="qsphere-state-prob">{(state.probability * 100).toFixed(1)}%</span><span className="qsphere-phase-track"><i style={{ left: `${((phase + Math.PI) / (2 * Math.PI)) * 100}%` }}/></span></div>;
@@ -970,7 +986,7 @@ function Router() {
     } catch { return 0; }
   });
   const [active, updateActive] = useState<Circuit>(() => {
-    try { const raw = localStorage.getItem(DRAFT_KEY); const draft = raw ? JSON.parse(raw) : null; if (draft?.schemaVersion === 1 && Array.isArray(draft.gates) && draft.qubits <= 5) return draft; } catch { /* recover to clean circuit */ }
+    try { const raw = localStorage.getItem(DRAFT_KEY); const draft = raw ? JSON.parse(raw) : null; if (draft?.schemaVersion === 1 && Array.isArray(draft.gates) && draft.qubits <= MAX_QUBITS) return draft; } catch { /* recover to clean circuit */ }
     return createCircuit();
   });
   const [toast, setToast] = useState('');

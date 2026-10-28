@@ -240,6 +240,7 @@ h3 { font-size:14px;letter-spacing:-.02em;margin-bottom:6px; }
 .editor-side > .side-tabs { order:0;flex:none; }
 .workspace-results { display:flex;flex:0 0 clamp(300px,38vh,420px);flex-direction:column;min-height:0;overflow:auto;padding:12px 14px 16px;border-top:1px solid hsl(var(--border));background:hsl(var(--card)); }
 .workspace-results.is-idle { flex-basis:126px; }
+.workspace-results.has-error { flex-basis:190px; }
 .workspace-results-heading { display:flex;flex:0 0 auto;align-items:center;justify-content:space-between;gap:12px;margin-bottom:3px; }
 .workspace-results-heading .panel-label { margin:0 0 3px; }
 .workspace-results-heading .run-note { font-size:9px; }
