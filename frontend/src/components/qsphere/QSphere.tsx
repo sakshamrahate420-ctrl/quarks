@@ -192,7 +192,8 @@ function toPlotState(
   let phi: number;
   if (mode === "amplitude") {
     theta = 2 * Math.acos(Math.min(1, magnitude));
-    phi = (2 * Math.PI * state.index) / allStates.length;
+    const basisPosition = Math.max(0, allStates.findIndex((candidate) => candidate.index === state.index));
+    phi = (2 * Math.PI * basisPosition) / allStates.length;
   } else {
     theta =
       bits.length > 0

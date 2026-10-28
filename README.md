@@ -82,7 +82,7 @@ The source is designed for native testing and Emscripten compilation. Run the co
 
 The project includes the QUARKS drag-and-drop circuit composer in `frontend/`. It uses the existing QuantumLab C++/WebAssembly engine through the stable protocol adapter in `web-demo/quantumlab-api.js`; circuits and simulation stay local in the browser.
 
-The composer supports up to 28 qubits for building and exporting circuits. To keep ordinary laptop browsers stable, dense state-vector simulation is capped at 16 qubits and reports a resource message above that limit. A dense 28-qubit state alone needs about 4 GiB for complex amplitudes, before simulator snapshots and browser-side data.
+The composer supports up to 28 qubits for building and exporting circuits. The dense C++/WebAssembly simulator is capped at 16 qubits. Above that, the frontend uses a sparse state-vector path for circuits with at most 65,536 occupied basis states; it reports a resource message if a circuit grows beyond that support limit. Sparse mode omits per-gate snapshots. A dense 28-qubit state alone needs about 4 GiB for complex amplitudes, before simulator snapshots and browser-side data.
 
 ### Launch on Windows
 

@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { generateOpenQasm, generateQiskitPython } from '@/services/codegen/circuitCode';
 import { simulateCircuit } from '@/services/simulation/SimulationAdapter';
+import { MAX_SPARSE_AMPLITUDES, MAX_SPARSE_QUBITS } from '@/services/simulation/SparseStateSimulator';
 import type { Circuit as EngineCircuit, SimulationResult } from '@/features/circuit/types';
 import {
   buildCircuitExportRows,
@@ -57,7 +58,7 @@ const qc = new QueryClient();
 const STORE_KEY = 'quarks.local.circuits.v1';
 const DRAFT_KEY = 'quarks.local.draft.v1';
 const SIMULATOR_MAX_QUBITS = 16;
-const simulatorLimitMessage = `This editor supports up to ${MAX_QUBITS} qubits. To protect browser memory, local statevector simulation is limited to ${SIMULATOR_MAX_QUBITS} qubits.`;
+const simulatorLimitMessage = `QUARKS supports up to ${MAX_QUBITS} qubits. This circuit exceeds the supported sparse-simulation range.`;
 const NAV = [
   { href: '/', label: 'Dashboard', icon: Grid2X2 },
   { href: '/editor', label: 'Circuit editor', icon: CircuitBoard },
@@ -485,7 +486,7 @@ function Editor({ circuits, setCircuits, active, setActive, notify, onRun }: { c
     setSimulationResult(null);
     setSimulation('idle');
     setSimulationError('');
-    if (active.qubits > SIMULATOR_MAX_QUBITS) {
+    if (active.qubits > MAX_QUBITS) {
       setSimulationError(simulatorLimitMessage);
       return;
     }
@@ -568,7 +569,7 @@ function Editor({ circuits, setCircuits, active, setActive, notify, onRun }: { c
   };
   const startSimulation = async () => {
     if (!active.gates.length) { notify('Add at least one operation before running a preview.'); return; }
-    if (active.qubits > SIMULATOR_MAX_QUBITS) { setSimulationError(simulatorLimitMessage); notify(simulatorLimitMessage); return; }
+    if (active.qubits > MAX_QUBITS) { setSimulationError(simulatorLimitMessage); notify(simulatorLimitMessage); return; }
     setIsRunning(true);
     setSimulationError('');
     try {
@@ -578,7 +579,7 @@ function Editor({ circuits, setCircuits, active, setActive, notify, onRun }: { c
       setSimulation('ready');
       setStepIndex(active.gates.length - 1);
       onRun();
-      notify(`QuantumLab WASM simulation completed · ${shots} shots. No quantum hardware was used.`);
+      notify(`${result.engine.includes('sparse') ? 'Sparse simulation' : 'QuantumLab WASM simulation'} completed · ${shots} shots. No quantum hardware was used.`);
     } catch (error) {
       setSimulation('idle');
       setSimulationResult(null);
@@ -786,10 +787,10 @@ function Editor({ circuits, setCircuits, active, setActive, notify, onRun }: { c
         </div>
         <div className="canvas-controls"><button className="button subtle" onClick={() => { const clean = active.gates.map((g, i) => ({ ...g, column: i })); snapshot({ ...active, gates: clean }); }} data-testid="button-align-gates"><Activity size={13}/> Compact columns</button><span className="toolbar-spacer"/><span className="run-note" data-testid="text-keyboard-shortcuts">Ctrl/Cmd+S save · Z undo · Delete removes selection</span></div>
         <section className={`workspace-results${simulationResult ? ' has-results' : simulationError ? ' has-error' : ' is-idle'}`} aria-label="Circuit simulation results">
-          <div className="workspace-results-heading"><div><div className="panel-label">Simulation results</div><span className="run-note">Circuits support up to {MAX_QUBITS} qubits; local statevector simulation supports up to {SIMULATOR_MAX_QUBITS}.</span></div><span className="status-pill">STATEVECTOR · DEMO</span></div>
+          <div className="workspace-results-heading"><div><div className="panel-label">Simulation results</div><span className="run-note">Dense simulation: up to {SIMULATOR_MAX_QUBITS} qubits. Sparse simulation: up to {MAX_SPARSE_QUBITS} qubits and {MAX_SPARSE_AMPLITUDES.toLocaleString()} occupied states.</span></div><span className="status-pill">STATEVECTOR · DEMO</span></div>
           <div className="shot-control"><label htmlFor="shot-count">Measurement shots</label><input id="shot-count" type="number" min="1" max="10000" value={shots} onChange={(event) => setShots(Math.min(10000, Math.max(1, Number(event.target.value) || 1)))} data-testid="input-shot-count"/></div>
           {simulationError && <div className="notice simulation-limit-notice" role="status" data-testid="notice-simulation-limit">{simulationError}</div>}
-          {simulationResult ? <div data-testid="status-simulation"><div className="run-note workspace-engine-note"><strong>{simulation === 'ready' ? 'Simulation complete' : `Step ${Math.max(0, stepIndex + 1)} of ${active.gates.length}`}</strong> · {simulationResult.engine} · Local simulation, not quantum hardware execution.</div>
+          {simulationResult ? <div data-testid="status-simulation"><div className="run-note workspace-engine-note"><strong>{simulation === 'ready' ? 'Simulation complete' : `Step ${Math.max(0, stepIndex + 1)} of ${active.gates.length}`}</strong> · {simulationResult.engine} · {simulationResult.engine.includes('sparse') ? 'Occupied states only; per-gate snapshots are disabled.' : 'Local simulation, not quantum hardware execution.'}</div>
             <SimulationResultsPanel result={simulationResult} stepIndex={stepIndex} activeTab={resultTab} onTabChange={setResultTab} circuitName={active.name} notify={notify}/>
           </div> : <div className="empty workspace-results-empty" data-testid="empty-simulation">Run the circuit to view its state probabilities and measurement counts.</div>}
         </section>
@@ -820,7 +821,7 @@ function Editor({ circuits, setCircuits, active, setActive, notify, onRun }: { c
         </div>
         <div className="side-section"><div className="property-row"><span>Qubits</span><strong data-testid="text-qubit-count">{active.qubits} / {MAX_QUBITS}</strong></div><div className="property-row"><span>Classical bits</span><strong>{active.classicalBits}</strong></div><div className="property-row"><span>Operations</span><strong>{active.gates.length}</strong></div></div>
       </aside>
-      <QSphereColumn result={simulationResult} stepIndex={stepIndex}/>
+      <QSphereColumn result={simulationResult} stepIndex={stepIndex} qubits={active.qubits}/>
     </div>
   </main>;
 }
@@ -860,7 +861,7 @@ function SimulationResultsPanel({ result, stepIndex, activeTab, onTabChange, cir
         <ResponsiveContainer width="100%" height={160}>
           <BarChart data={displayStates} margin={{ top: 8, right: 4, left: -22, bottom: 2 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid, #333b4a)"/>
-            <XAxis dataKey="bitstring" tick={{ fontSize: 9, fill: 'var(--chart-label, #a9b1c4)' }} />
+            <XAxis dataKey="bitstring" tickFormatter={(label: string) => label.length > 12 ? `${label.slice(0, 5)}…${label.slice(-5)}` : label} tick={{ fontSize: 9, fill: 'var(--chart-label, #a9b1c4)' }} />
             <YAxis domain={[0, 1]} tick={{ fontSize: 9, fill: 'var(--chart-label, #a9b1c4)' }} />
             <ChartTooltip formatter={(value: number | string) => [`${(Number(value) * 100).toFixed(2)}%`, 'Probability']} labelFormatter={(label) => `|${label}⟩`} />
             <Bar dataKey="probability" radius={[3, 3, 0, 0]}>
@@ -886,7 +887,7 @@ function SimulationResultsPanel({ result, stepIndex, activeTab, onTabChange, cir
         <ResponsiveContainer width="100%" height={190}>
           <BarChart data={histogram} margin={{ top: 8, right: 4, left: -22, bottom: 2 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid, #333b4a)"/>
-            <XAxis dataKey="bitstring" tick={{ fontSize: 9, fill: 'var(--chart-label, #a9b1c4)' }} />
+            <XAxis dataKey="bitstring" tickFormatter={(label: string) => label.length > 12 ? `${label.slice(0, 5)}…${label.slice(-5)}` : label} tick={{ fontSize: 9, fill: 'var(--chart-label, #a9b1c4)' }} />
             <YAxis allowDecimals={false} tick={{ fontSize: 9, fill: 'var(--chart-label, #a9b1c4)' }} />
             <ChartTooltip formatter={(value: number | string, name: string, item) => [name === 'count' ? `${value} (${Number(item.payload.percentage).toFixed(2)}%)` : value, 'Measured']} labelFormatter={(label) => `Outcome ${label}`} />
             <Bar dataKey="count" fill="#25b7c4" radius={[3, 3, 0, 0]} />
@@ -903,7 +904,7 @@ function SimulationResultsPanel({ result, stepIndex, activeTab, onTabChange, cir
   </div>;
 }
 
-function QSphereColumn({ result, stepIndex }: { result: SimulationResult | null; stepIndex: number }) {
+function QSphereColumn({ result, stepIndex, qubits }: { result: SimulationResult | null; stepIndex: number; qubits: number }) {
   const snapshot = result?.snapshots.find((item) => item.gateIndex === stepIndex)
     ?? result?.snapshots.find((item) => item.gateIndex === -1)
     ?? result?.snapshots[result.snapshots.length - 1];
@@ -928,7 +929,7 @@ function QSphereColumn({ result, stepIndex }: { result: SimulationResult | null;
       <div className="qsphere-metrics" aria-label="State diagnostics" data-testid="qsphere-metrics">
         <div><span>Norm</span><strong>{norm.toFixed(6)}</strong></div>
         <div><span>Entropy</span><strong>{entropy.toFixed(3)} bits</strong></div>
-        <div><span>Occupied states</span><strong>{supportCount} / {states.length}</strong></div>
+        <div><span>Occupied states</span><strong>{supportCount.toLocaleString()} / {(2 ** qubits).toLocaleString()}</strong></div>
         <div><span>Mean excitations</span><strong>{averageWeight.toFixed(3)}</strong></div>
       </div>
       <section className="qsphere-inspector"><div className="qsphere-inspector-title"><strong>Basis amplitudes</strong><span>{states.length > inspectorStates.length ? `top ${inspectorStates.length} by probability` : 'sorted by probability'}</span></div>
@@ -939,7 +940,7 @@ function QSphereColumn({ result, stepIndex }: { result: SimulationResult | null;
           return <div className="qsphere-state-row" key={state.bitstring}><span className="qsphere-state-label">|{state.bitstring}⟩</span><span className="qsphere-state-amplitude">{amplitude.re.toFixed(3)} {amplitude.im < 0 ? '−' : '+'} {Math.abs(amplitude.im).toFixed(3)}i</span><span className="qsphere-state-prob">{(state.probability * 100).toFixed(1)}%</span><span className="qsphere-phase-track"><i style={{ left: `${((phase + Math.PI) / (2 * Math.PI)) * 100}%` }}/></span></div>;
         })}</div>
       </section>
-      <p className="qsphere-column-note">Inspect marker position, magnitude, and phase in 3D. The diagnostics describe the currently selected simulation step.</p>
+      <p className="qsphere-column-note">{result?.engine.includes('sparse') ? `Sparse view plots occupied states only: ${sphereStates.length.toLocaleString()} markers shown out of ${(2 ** qubits).toLocaleString()} possible basis states.` : 'Inspect marker position, magnitude, and phase in 3D. The diagnostics describe the currently selected simulation step.'} The selected-step diagnostics appear here.</p>
     </> : <div className="qsphere-waiting" data-testid="empty-qsphere-column"><div className="qsphere-waiting-orb">ψ</div><strong>{result ? 'Pure state unavailable' : 'Run a circuit to explore its state'}</strong><p>{result ? 'This circuit includes measurement trajectories. Probability and counts are available in Simulation results; a single pure-state QSphere is undefined for that ensemble.' : 'The QSphere will show basis states, amplitude magnitude, and phase after the circuit runs.'}</p></div>}
   </aside>;
 }

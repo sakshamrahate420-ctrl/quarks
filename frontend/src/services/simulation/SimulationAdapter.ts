@@ -8,6 +8,7 @@ import type {
   SimulationSnapshot,
 } from "../../features/circuit/types";
 import { createSimulator } from "../../../../web-demo/quantumlab-api.js";
+import { simulateSparseCircuit } from "./SparseStateSimulator";
 
 type WasmStatevector = { real: number[]; imag: number[] };
 type WasmSnapshot = { gate_index: number; gate: Record<string, unknown>; statevector: WasmStatevector };
@@ -67,6 +68,7 @@ export class QuantumLabWasmAdapter implements SimulationAdapter {
     const validation = validateCircuit(input.circuit);
     if (!validation.valid) throw new Error(validation.errors.join("\n"));
     const gates = sortGates(input.circuit.gates);
+    if (input.circuit.numQubits > 16) return simulateSparseCircuit(input, gates);
     const hasMidCircuitMeasurement = gates.some((gate) => gate.type === "MEASURE");
     const simulator = await loadSimulator();
     const response = await simulator.simulateCircuit({
