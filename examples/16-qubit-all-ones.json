@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "id": "test-16-qubit",
+  "name": "16-Qubit All-Ones State",
+  "updatedAt": "2026-10-28T23:48:13.8525806Z",
+  "qubits": 16,
+  "classicalBits": 0,
+  "quantumRegisters": [
+    {
+      "id": "qreg-0",
+      "name": "q",
+      "start": 0,
+      "size": 16
+    }
+  ],
+  "classicalRegisters": [],
+  "gates": [
+    {
+      "id": "x0",
+      "kind": "X",
+      "target": 0,
+      "column": 0
+    },
+    {
+      "id": "x1",
+      "kind": "X",
+      "target": 1,
+      "column": 1
+    },
+    {
+      "id": "x2",
+      "kind": "X",
+      "target": 2,
+      "column": 2
+    },
+    {
+      "id": "x3",
+      "kind": "X",
+      "target": 3,
+      "column": 3
+    },
+    {
+      "id": "x4",
+      "kind": "X",
+      "target": 4,
+      "column": 4
+    },
+    {
+      "id": "x5",
+      "kind": "X",
+      "target": 5,
+      "column": 5
+    },
+    {
+      "id": "x6",
+      "kind": "X",
+      "target": 6,
+      "column": 6
+    },
+    {
+      "id": "x7",
+      "kind": "X",
+      "target": 7,
+      "column": 7
+    },
+    {
+      "id": "x8",
+      "kind": "X",
+      "target": 8,
+      "column": 8
+    },
+    {
+      "id": "x9",
+      "kind": "X",
+      "target": 9,
+      "column": 9
+    },
+    {
+      "id": "x10",
+      "kind": "X",
+      "target": 10,
+      "column": 10
+    },
+    {
+      "id": "x11",
+      "kind": "X",
+      "target": 11,
+      "column": 11
+    },
+    {
+      "id": "x12",
+      "kind": "X",
+      "target": 12,
+      "column": 12
+    },
+    {
+      "id": "x13",
+      "kind": "X",
+      "target": 13,
+      "column": 13
+    },
+    {
+      "id": "x14",
+      "kind": "X",
+      "target": 14,
+      "column": 14
+    },
+    {
+      "id": "x15",
+      "kind": "X",
+      "target": 15,
+      "column": 15
+    }
+  ]
+}
