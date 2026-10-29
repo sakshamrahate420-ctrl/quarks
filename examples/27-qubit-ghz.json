@@ -1,208 +1,212 @@
 {
-  "schemaVersion": 1,
-  "quantumRegisters": [
-    {
-      "size": 27,
-      "id": "qreg-0",
-      "start": 0,
-      "name": "q"
-    }
-  ],
-  "updatedAt": "2026-10-29T00:00:00.000Z",
-  "numQubits": 27,
-  "numClassicalBits": 0,
-  "id": "test-27-qubit-ghz",
-  "gates": [
-    {
-      "id": "h-q0",
-      "target": 0,
-      "column": 0,
-      "type": "H"
-    },
-    {
-      "id": "cnot-q0-q1",
-      "column": 1,
-      "control": 0,
-      "target": 1,
-      "type": "CNOT"
-    },
-    {
-      "id": "cnot-q0-q2",
-      "column": 2,
-      "control": 0,
-      "target": 2,
-      "type": "CNOT"
-    },
-    {
-      "id": "cnot-q0-q3",
-      "column": 3,
-      "control": 0,
-      "target": 3,
-      "type": "CNOT"
-    },
-    {
-      "id": "cnot-q0-q4",
-      "column": 4,
-      "control": 0,
-      "target": 4,
-      "type": "CNOT"
-    },
-    {
-      "id": "cnot-q0-q5",
-      "column": 5,
-      "control": 0,
-      "target": 5,
-      "type": "CNOT"
-    },
-    {
-      "id": "cnot-q0-q6",
-      "column": 6,
-      "control": 0,
-      "target": 6,
-      "type": "CNOT"
-    },
-    {
-      "id": "cnot-q0-q7",
-      "column": 7,
-      "control": 0,
-      "target": 7,
-      "type": "CNOT"
-    },
-    {
-      "id": "cnot-q0-q8",
-      "column": 8,
-      "control": 0,
-      "target": 8,
-      "type": "CNOT"
-    },
-    {
-      "id": "cnot-q0-q9",
-      "column": 9,
-      "control": 0,
-      "target": 9,
-      "type": "CNOT"
-    },
-    {
-      "id": "cnot-q0-q10",
-      "column": 10,
-      "control": 0,
-      "target": 10,
-      "type": "CNOT"
-    },
-    {
-      "id": "cnot-q0-q11",
-      "column": 11,
-      "control": 0,
-      "target": 11,
-      "type": "CNOT"
-    },
-    {
-      "id": "cnot-q0-q12",
-      "column": 12,
-      "control": 0,
-      "target": 12,
-      "type": "CNOT"
-    },
-    {
-      "id": "cnot-q0-q13",
-      "column": 13,
-      "control": 0,
-      "target": 13,
-      "type": "CNOT"
-    },
-    {
-      "id": "cnot-q0-q14",
-      "column": 14,
-      "control": 0,
-      "target": 14,
-      "type": "CNOT"
-    },
-    {
-      "id": "cnot-q0-q15",
-      "column": 15,
-      "control": 0,
-      "target": 15,
-      "type": "CNOT"
-    },
-    {
-      "id": "cnot-q0-q16",
-      "column": 16,
-      "control": 0,
-      "target": 16,
-      "type": "CNOT"
-    },
-    {
-      "id": "cnot-q0-q17",
-      "column": 17,
-      "control": 0,
-      "target": 17,
-      "type": "CNOT"
-    },
-    {
-      "id": "cnot-q0-q18",
-      "column": 18,
-      "control": 0,
-      "target": 18,
-      "type": "CNOT"
-    },
-    {
-      "id": "cnot-q0-q19",
-      "column": 19,
-      "control": 0,
-      "target": 19,
-      "type": "CNOT"
-    },
-    {
-      "id": "cnot-q0-q20",
-      "column": 20,
-      "control": 0,
-      "target": 20,
-      "type": "CNOT"
-    },
-    {
-      "id": "cnot-q0-q21",
-      "column": 21,
-      "control": 0,
-      "target": 21,
-      "type": "CNOT"
-    },
-    {
-      "id": "cnot-q0-q22",
-      "column": 22,
-      "control": 0,
-      "target": 22,
-      "type": "CNOT"
-    },
-    {
-      "id": "cnot-q0-q23",
-      "column": 23,
-      "control": 0,
-      "target": 23,
-      "type": "CNOT"
-    },
-    {
-      "id": "cnot-q0-q24",
-      "column": 24,
-      "control": 0,
-      "target": 24,
-      "type": "CNOT"
-    },
-    {
-      "id": "cnot-q0-q25",
-      "column": 25,
-      "control": 0,
-      "target": 25,
-      "type": "CNOT"
-    },
-    {
-      "id": "cnot-q0-q26",
-      "column": 26,
-      "control": 0,
-      "target": 26,
-      "type": "CNOT"
-    }
-  ],
-  "createdAt": "2026-10-29T00:00:00.000Z",
-  "name": "27-Qubit GHZ State",
-  "classicalRegisters": []
+  "exportedAt": "2026-10-29T00:00:00.000Z",
+  "circuit": {
+    "schemaVersion": 1,
+    "quantumRegisters": [
+      {
+        "size": 27,
+        "id": "qreg-0",
+        "start": 0,
+        "name": "q"
+      }
+    ],
+    "updatedAt": "2026-10-29T00:00:00Z",
+    "numQubits": 27,
+    "numClassicalBits": 0,
+    "id": "test-27-qubit-ghz",
+    "gates": [
+      {
+        "id": "h-q0",
+        "target": 0,
+        "column": 0,
+        "type": "H"
+      },
+      {
+        "id": "cnot-q0-q1",
+        "column": 1,
+        "control": 0,
+        "target": 1,
+        "type": "CNOT"
+      },
+      {
+        "id": "cnot-q0-q2",
+        "column": 2,
+        "control": 0,
+        "target": 2,
+        "type": "CNOT"
+      },
+      {
+        "id": "cnot-q0-q3",
+        "column": 3,
+        "control": 0,
+        "target": 3,
+        "type": "CNOT"
+      },
+      {
+        "id": "cnot-q0-q4",
+        "column": 4,
+        "control": 0,
+        "target": 4,
+        "type": "CNOT"
+      },
+      {
+        "id": "cnot-q0-q5",
+        "column": 5,
+        "control": 0,
+        "target": 5,
+        "type": "CNOT"
+      },
+      {
+        "id": "cnot-q0-q6",
+        "column": 6,
+        "control": 0,
+        "target": 6,
+        "type": "CNOT"
+      },
+      {
+        "id": "cnot-q0-q7",
+        "column": 7,
+        "control": 0,
+        "target": 7,
+        "type": "CNOT"
+      },
+      {
+        "id": "cnot-q0-q8",
+        "column": 8,
+        "control": 0,
+        "target": 8,
+        "type": "CNOT"
+      },
+      {
+        "id": "cnot-q0-q9",
+        "column": 9,
+        "control": 0,
+        "target": 9,
+        "type": "CNOT"
+      },
+      {
+        "id": "cnot-q0-q10",
+        "column": 10,
+        "control": 0,
+        "target": 10,
+        "type": "CNOT"
+      },
+      {
+        "id": "cnot-q0-q11",
+        "column": 11,
+        "control": 0,
+        "target": 11,
+        "type": "CNOT"
+      },
+      {
+        "id": "cnot-q0-q12",
+        "column": 12,
+        "control": 0,
+        "target": 12,
+        "type": "CNOT"
+      },
+      {
+        "id": "cnot-q0-q13",
+        "column": 13,
+        "control": 0,
+        "target": 13,
+        "type": "CNOT"
+      },
+      {
+        "id": "cnot-q0-q14",
+        "column": 14,
+        "control": 0,
+        "target": 14,
+        "type": "CNOT"
+      },
+      {
+        "id": "cnot-q0-q15",
+        "column": 15,
+        "control": 0,
+        "target": 15,
+        "type": "CNOT"
+      },
+      {
+        "id": "cnot-q0-q16",
+        "column": 16,
+        "control": 0,
+        "target": 16,
+        "type": "CNOT"
+      },
+      {
+        "id": "cnot-q0-q17",
+        "column": 17,
+        "control": 0,
+        "target": 17,
+        "type": "CNOT"
+      },
+      {
+        "id": "cnot-q0-q18",
+        "column": 18,
+        "control": 0,
+        "target": 18,
+        "type": "CNOT"
+      },
+      {
+        "id": "cnot-q0-q19",
+        "column": 19,
+        "control": 0,
+        "target": 19,
+        "type": "CNOT"
+      },
+      {
+        "id": "cnot-q0-q20",
+        "column": 20,
+        "control": 0,
+        "target": 20,
+        "type": "CNOT"
+      },
+      {
+        "id": "cnot-q0-q21",
+        "column": 21,
+        "control": 0,
+        "target": 21,
+        "type": "CNOT"
+      },
+      {
+        "id": "cnot-q0-q22",
+        "column": 22,
+        "control": 0,
+        "target": 22,
+        "type": "CNOT"
+      },
+      {
+        "id": "cnot-q0-q23",
+        "column": 23,
+        "control": 0,
+        "target": 23,
+        "type": "CNOT"
+      },
+      {
+        "id": "cnot-q0-q24",
+        "column": 24,
+        "control": 0,
+        "target": 24,
+        "type": "CNOT"
+      },
+      {
+        "id": "cnot-q0-q25",
+        "column": 25,
+        "control": 0,
+        "target": 25,
+        "type": "CNOT"
+      },
+      {
+        "id": "cnot-q0-q26",
+        "column": 26,
+        "control": 0,
+        "target": 26,
+        "type": "CNOT"
+      }
+    ],
+    "createdAt": "2026-10-29T00:00:00Z",
+    "name": "27-Qubit GHZ State",
+    "classicalRegisters": []
+  },
+  "schemaVersion": 1
 }
