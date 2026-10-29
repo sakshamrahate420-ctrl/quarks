@@ -70,7 +70,7 @@ export class QuantumLabWasmAdapter implements SimulationAdapter {
     if (!validation.valid) throw new Error(validation.errors.join("\n"));
     const gates = sortGates(input.circuit.gates);
     if (input.circuit.numQubits > 16) {
-      if (supportsProductTensorCircuit(gates)) return simulateProductTensorCircuit(input, gates);
+      if (supportsProductTensorCircuit(input.circuit.numQubits, gates)) return simulateProductTensorCircuit(input, gates);
       return simulateSparseCircuit(input, gates);
     }
     const hasMidCircuitMeasurement = gates.some((gate) => gate.type === "MEASURE");

@@ -4,7 +4,7 @@ QUARKS is a quantum circuit composer and simulator powered by a self-built C++ e
 
 QuantumLab is a small state-vector quantum circuit simulator. Its simulation engine is written in C++20 and can be compiled both as a native library for testing and as WebAssembly for in-browser execution. The website is a separate static HTML/CSS/JavaScript client.
 
-**There is no server-side simulation.** The browser calls a thin Embind API, which calls the same C++ engine used by native tests. JavaScript does not implement quantum gates.
+**There is no server-side simulation.** Circuits of up to 16 qubits in the editor use the C++20 engine compiled to WebAssembly. Selected larger circuits use bounded TypeScript fallbacks: a sparse state map, or a product-state tensor representation that samples outcomes without expanding the full basis.
 
 ## Features
 
@@ -82,7 +82,15 @@ The source is designed for native testing and Emscripten compilation. Run the co
 
 The project includes the QUARKS drag-and-drop circuit composer in `frontend/`. It uses the existing QuantumLab C++/WebAssembly engine through the stable protocol adapter in `web-demo/quantumlab-api.js`; circuits and simulation stay local in the browser.
 
-The composer supports up to 28 qubits for building and exporting circuits. The dense C++/WebAssembly simulator is capped at 16 qubits. Above that, independent single-qubit circuits use a bond-dimension-one tensor-network representation and sample the output distribution without expanding the full basis. Other circuits use a sparse state-vector path for at most 65,536 occupied basis states, with a resource message above that limit. These large-circuit modes omit per-gate snapshots; tensor-network graphs show sampled outcomes rather than every possible basis state. A dense 28-qubit statevector alone needs about 4 GiB for complex amplitudes, before simulator snapshots and browser-side data.
+The composer supports up to 28 qubits for building and exporting circuits. The dense C++/WebAssembly simulator is capped at 16 qubits in the editor. Above that, circuits which remain factorizable into independent qubit states use a bond-dimension-one tensor-network representation and sample the output distribution without expanding the full basis. This includes Bernstein-Vazirani's CNOT oracle when its target ancilla is in an X eigenstate. Other circuits use a sparse state-vector path for at most 65,536 occupied basis states, with a resource message above that limit. These large-circuit modes omit per-gate snapshots; tensor-network graphs show sampled outcomes rather than every possible basis state. A dense 28-qubit statevector alone needs about 4 GiB for complex amplitudes, before simulator snapshots and browser-side data.
+
+### Bernstein-Vazirani example and tests
+
+The Dashboard includes a changeable secret input (2 to 27 bits). **Open Bernstein-Vazirani circuit** creates an editable circuit with one extra ancilla qubit, so a 27-bit secret uses the editor's maximum of 28 qubits. The circuit prepares the ancilla in `|->`, applies an oracle CNOT for each `1` in the secret, applies Hadamards to the input register, and measures the input qubits. The measured input bitstring is the secret. At 28 qubits, the product-state tensor path recognizes that the ancilla is an X eigenstate and applies each CNOT as a phase on its control, preserving the factorized representation.
+
+The native test `tests/test_bernstein_vazirani.cpp` runs every secret for `n=2..10` through the C++ state-vector simulator and asserts that total probability on the secret input is 1 within `1e-10`. The frontend test `frontend/src/services/simulation/bernsteinVazirani.test.ts` exercises the large product-state route for all the same secrets, then benchmarks a random 27-bit secret (28 total qubits, 1024 shots) and prints the elapsed time.
+
+Run the native checks with `cmake -S . -B build/native -DCMAKE_BUILD_TYPE=Release -DQUANTUMLAB_BUILD_TESTS=ON`, `cmake --build build/native --parallel`, and `ctest --test-dir build/native --output-on-failure`. Run the focused frontend Bernstein-Vazirani tests with `npm test --prefix frontend -- src/services/simulation/bernsteinVazirani.test.ts --reporter=verbose --silent=false`.
 
 ### Launch on Windows
 

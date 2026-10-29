@@ -68,26 +68,70 @@ function bitstring(index: bigint, qubits: number): string {
   return index.toString(2).padStart(qubits, "0");
 }
 
-export function supportsProductTensorCircuit(gates: CircuitGate[]): boolean {
-  return gates.every((gate) => gateMatrix(gate) !== null);
+function applyLocalGate(qubits: Vector[], target: number, matrix: Matrix): void {
+  const state = qubits[target];
+  const zero = add(multiply(matrix[0], state[0]), multiply(matrix[1], state[1]));
+  const one = add(multiply(matrix[2], state[0]), multiply(matrix[3], state[1]));
+  qubits[target] = [zero, one];
+}
+
+function sameComplex(a: ComplexAmplitude, b: ComplexAmplitude): boolean {
+  return Math.hypot(a.re - b.re, a.im - b.im) < 1e-12;
+}
+
+function applyFactorableCnot(qubits: Vector[], control: number, target: number): boolean {
+  const controlState = qubits[control];
+  const targetState = qubits[target];
+  const controlOneProbability = controlState[1].re ** 2 + controlState[1].im ** 2;
+  if (controlOneProbability < 1e-12) return true;
+  if (controlOneProbability > 1 - 1e-12) {
+    applyLocalGate(qubits, target, [ZERO, ONE, ONE, ZERO]);
+    return true;
+  }
+
+  const targetIsPlus = sameComplex(targetState[0], targetState[1]);
+  const targetIsMinus = sameComplex(targetState[0], {
+    re: -targetState[1].re,
+    im: -targetState[1].im,
+  });
+  if (!targetIsPlus && !targetIsMinus) return false;
+  if (targetIsMinus) applyLocalGate(qubits, control, [ONE, ZERO, ZERO, { re: -1, im: 0 }]);
+  return true;
+}
+
+function productStateAfterCircuit(numQubits: number, gates: CircuitGate[]): Vector[] | null {
+  const qubits = Array.from({ length: numQubits }, () => [ONE, ZERO] as Vector);
+  let measurementsStarted = false;
+  for (const gate of gates) {
+    if (gate.type === "MEASURE") {
+      measurementsStarted = true;
+      continue;
+    }
+    if (measurementsStarted) return null;
+    const matrix = gateMatrix(gate);
+    if (matrix && "target" in gate) {
+      applyLocalGate(qubits, gate.target, matrix);
+      continue;
+    }
+    if (gate.type === "CNOT" && applyFactorableCnot(qubits, gate.control, gate.target)) continue;
+    return null;
+  }
+  return qubits;
+}
+
+export function supportsProductTensorCircuit(numQubits: number, gates: CircuitGate[]): boolean {
+  return productStateAfterCircuit(numQubits, gates) !== null;
 }
 
 /** Simulates bond-dimension-one tensor networks and samples the output distribution. */
 export function simulateProductTensorCircuit(input: SimulationInput, gates: CircuitGate[]): SimulationResult {
   const started = performance.now();
   const { circuit, shots } = input;
-  const qubits = Array.from({ length: circuit.numQubits }, () => [ONE, ZERO] as Vector);
-
-  for (const gate of gates) {
-    const matrix = gateMatrix(gate);
-    if (!matrix || !("target" in gate)) {
-      throw new Error("Product tensor-network simulation only supports independent single-qubit gates. Entangling operations use sparse simulation.");
-    }
-    const state = qubits[gate.target];
-    const zero = add(multiply(matrix[0], state[0]), multiply(matrix[1], state[1]));
-    const one = add(multiply(matrix[2], state[0]), multiply(matrix[3], state[1]));
-    qubits[gate.target] = [zero, one];
+  if (!Number.isInteger(shots) || shots < 1 || shots > 100_000) {
+    throw new Error("Product tensor-network simulation requires between 1 and 100,000 shots.");
   }
+  const qubits = productStateAfterCircuit(circuit.numQubits, gates);
+  if (!qubits) throw new Error("Product tensor-network simulation cannot preserve this circuit as independent qubit states.");
 
   const random = randomFor(input.seed ?? 0x514b4152);
   const counts: Record<string, number> = {};

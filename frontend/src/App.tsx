@@ -6,6 +6,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { generateOpenQasm, generateQiskitPython } from '@/services/codegen/circuitCode';
 import { simulateCircuit } from '@/services/simulation/SimulationAdapter';
 import { MAX_SPARSE_AMPLITUDES, MAX_SPARSE_QUBITS } from '@/services/simulation/SparseStateSimulator';
+import { createBernsteinVaziraniCircuit } from '@/features/circuit/bernsteinVazirani';
 import type { Circuit as EngineCircuit, SimulationResult } from '@/features/circuit/types';
 import {
   buildCircuitExportRows,
@@ -355,8 +356,9 @@ function Shell({ children, theme, onTheme, title }: { children: ReactNode; theme
 function Footer() {
   return <div className="footer-links"><AppLink href="/terms">Terms</AppLink><AppLink href="/privacy">Privacy</AppLink><span>QUARKS · frontend preview</span></div>;
 }
-function Dashboard({ circuits, openPreset, onNew, recentRuns }: { circuits: Circuit[]; openPreset: (id: string) => void; onNew: () => void; recentRuns: number }) {
+function Dashboard({ circuits, openPreset, openBernsteinVazirani, onNew, recentRuns }: { circuits: Circuit[]; openPreset: (id: string) => void; openBernsteinVazirani: (secret: string) => void; onNew: () => void; recentRuns: number }) {
   const [minimized, setMinimized] = useState(false);
+  const [bernsteinSecret, setBernsteinSecret] = useState('10110');
   const totalGates = circuits.reduce((n, c) => n + c.gates.length, 0);
   const latest = circuits.slice().sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 3);
   return <main className="page">
@@ -368,6 +370,13 @@ function Dashboard({ circuits, openPreset, onNew, recentRuns }: { circuits: Circ
       <section className="stat-grid" aria-label="Local workspace statistics"><div className="card stat-card"><div className="stat-label">Saved circuits</div><div className="stat-value" data-testid="stat-circuit-count">{circuits.length.toString().padStart(2, '0')}</div><div className="stat-foot">Stored in this browser</div></div><div className="card stat-card"><div className="stat-label">Gates placed</div><div className="stat-value" data-testid="stat-gate-count">{totalGates.toString().padStart(2, '0')}</div><div className="stat-foot">Across your saved work</div></div><div className="card stat-card"><div className="stat-label">Recent runs</div><div className="stat-value" data-testid="stat-run-count">{recentRuns.toString().padStart(2, '0')}</div><div className="stat-foot">{recentRuns === 0 ? 'No runs recorded yet' : 'Classical previews in this browser'}</div></div></section>
       <div className="section-head"><div><h2>Start with an example</h2><p>Each card opens a real, editable circuit.</p></div><AppLink href="/learn" className="button subtle" testid="link-learn-examples">Explore concepts <ArrowRight size={14}/></AppLink></div>
       <section className="examples">{PRESETS.map((preset) => <button className="card example-card" key={preset.id} onClick={() => openPreset(preset.id)} data-testid={`card-example-${preset.id}`} aria-label={`Open ${preset.name} example`}><div className="example-glyph">{preset.gates.slice(0, 4).map((g, i) => <span key={`${g.kind}-${i}`} className="glyph-gate">{gateSymbol(g.kind)}</span>)}{preset.gates.some((g) => ['CNOT', 'CZ', 'SWAP', 'CCNOT'].includes(g.kind)) && <Link2 size={15}/>}</div><span className="example-title">{preset.name}</span><span className="example-desc">{preset.detail}</span></button>)}</section>
+      <section className="quick-card card bv-example-card" data-testid="bernstein-vazirani-example">
+        <div className="eyebrow"><Sparkles size={13}/> Algorithm example</div>
+        <h2 style={{ marginTop: 8 }}>Bernstein-Vazirani</h2>
+        <p className="lead" style={{ fontSize: 11 }}>Choose a hidden bit string, then open its editable oracle circuit. The ancilla is added automatically.</p>
+        <div className="field"><label htmlFor="bv-secret">Secret bit string</label><input id="bv-secret" value={bernsteinSecret} maxLength={MAX_QUBITS - 1} pattern="[01]{2,27}" inputMode="numeric" autoComplete="off" spellCheck={false} onChange={(event) => setBernsteinSecret(event.target.value.replace(/[^01]/g, ''))} data-testid="input-bv-secret"/><span className="stat-foot">2 to {MAX_QUBITS - 1} bits; 27 input bits use the 28-qubit editor limit.</span></div>
+        <button className="button primary" onClick={() => openBernsteinVazirani(bernsteinSecret)} disabled={!/^[01]{2,27}$/.test(bernsteinSecret)} data-testid="button-open-bv-example">Open Bernstein-Vazirani circuit</button>
+      </section>
       <div className="quick-grid"><section className="quick-card card"><div className="section-head" style={{ margin: '0 0 10px' }}><div><h2>Local circuits</h2><p>Your actual saved projects, nothing invented.</p></div><AppLink href="/circuits" className="button subtle" testid="link-all-circuits">View all</AppLink></div>
         {latest.length ? latest.map((c) => <AppLink href={`/editor?circuit=${encodeURIComponent(c.id)}`} className="quick-link" key={c.id} testid={`link-recent-circuit-${c.id}`}><span>{c.name}<small style={{ display: 'block', color: 'hsl(var(--muted-foreground))', fontWeight: 500, marginTop: 4 }}>{c.qubits} qubits · {c.gates.length} gates · {formatDate(c.updatedAt)}</small></span><ArrowRight size={15}/></AppLink>) : <div className="empty">No local circuits yet. Create one or open an example.</div>}</section>
         <section className="quick-card card"><div className="eyebrow"><CircleHelp size={13}/> First steps</div><h2 style={{ marginTop: 10 }}>A small map for a big idea.</h2><p className="lead" style={{ fontSize: 11 }}>Place gates on wires, inspect the generated code, then follow each operation through a classical preview.</p><AppLink href="/learn" className="button" testid="button-getting-started"><BookOpen size={14}/> Read the field guide</AppLink></section></div>
@@ -787,7 +796,7 @@ function Editor({ circuits, setCircuits, active, setActive, notify, onRun }: { c
         </div>
         <div className="canvas-controls"><button className="button subtle" onClick={() => { const clean = active.gates.map((g, i) => ({ ...g, column: i })); snapshot({ ...active, gates: clean }); }} data-testid="button-align-gates"><Activity size={13}/> Compact columns</button><span className="toolbar-spacer"/><span className="run-note" data-testid="text-keyboard-shortcuts">Ctrl/Cmd+S save · Z undo · Delete removes selection</span></div>
         <section className={`workspace-results${simulationResult ? ' has-results' : simulationError ? ' has-error' : ' is-idle'}`} aria-label="Circuit simulation results">
-          <div className="workspace-results-heading"><div><div className="panel-label">Simulation results</div><span className="run-note">Dense simulation: up to {SIMULATOR_MAX_QUBITS} qubits. Sparse simulation: up to {MAX_SPARSE_QUBITS} qubits and {MAX_SPARSE_AMPLITUDES.toLocaleString()} occupied states. Independent single-qubit circuits use a sampled tensor network.</span></div><span className="status-pill">LOCAL SIMULATION</span></div>
+          <div className="workspace-results-heading"><div><div className="panel-label">Simulation results</div><span className="run-note">Dense simulation: up to {SIMULATOR_MAX_QUBITS} qubits. Sparse simulation: up to {MAX_SPARSE_QUBITS} qubits and {MAX_SPARSE_AMPLITUDES.toLocaleString()} occupied states. Product-state circuits, including suitable Bernstein-Vazirani oracles, use sampled tensors.</span></div><span className="status-pill">LOCAL SIMULATION</span></div>
           <div className="shot-control"><label htmlFor="shot-count">Measurement shots</label><input id="shot-count" type="number" min="1" max="10000" value={shots} onChange={(event) => setShots(Math.min(10000, Math.max(1, Number(event.target.value) || 1)))} data-testid="input-shot-count"/></div>
           {simulationError && <div className="notice simulation-limit-notice" role="status" data-testid="notice-simulation-limit">{simulationError}</div>}
           {simulationResult ? <div data-testid="status-simulation"><div className="run-note workspace-engine-note"><strong>{simulation === 'ready' ? 'Simulation complete' : `Step ${Math.max(0, stepIndex + 1)} of ${active.gates.length}`}</strong> · {simulationResult.engine} · {simulationResult.engine.includes('sparse') ? 'Occupied states only; per-gate snapshots are disabled.' : simulationResult.engine.includes('tensor-network') ? 'Independent qubits are factorized; graphs show sampled outcomes.' : 'Local simulation, not quantum hardware execution.'}</div>
@@ -1015,12 +1024,13 @@ function Router() {
   };
   const newCircuit = () => { const next = createCircuit(); setActive(next); setLocation('/editor'); };
   const openPreset = (id: string) => { setActive(makePreset(id)); setLocation('/editor'); };
+  const openBernsteinVazirani = (secret: string) => { setActive(fromEngineCircuit(createBernsteinVaziraniCircuit(secret))); setLocation('/editor'); };
   const openSaved = (c: Circuit) => { setActive(c); setLocation('/editor'); };
   const deleteCircuit = (c: Circuit) => { if (!window.confirm(`Delete “${c.name}” from this browser?`)) return; setCircuits(circuits.filter((item) => item.id !== c.id)); notify('Local circuit deleted.'); };
   const pageNames: Record<string, string> = { '/': 'Dashboard', '/editor': 'Circuit editor', '/circuits': 'My circuits', '/learn': 'Learn', '/about': 'About QUARKS', '/settings': 'Settings', '/terms': 'Terms', '/privacy': 'Privacy' };
   return <Shell theme={theme} onTheme={setTheme} title={pageNames[window.location.pathname] ?? 'QUARKS'}>
     <Switch>
-      <Route path="/"><Dashboard circuits={circuits} openPreset={openPreset} onNew={newCircuit} recentRuns={runCount}/></Route>
+      <Route path="/"><Dashboard circuits={circuits} openPreset={openPreset} openBernsteinVazirani={openBernsteinVazirani} onNew={newCircuit} recentRuns={runCount}/></Route>
       <Route path="/editor"><Editor circuits={circuits} setCircuits={setCircuits} active={active} setActive={setActive} notify={notify} onRun={recordRun}/></Route>
       <Route path="/circuits"><Circuits circuits={circuits} onOpen={openSaved} onNew={newCircuit} onDelete={deleteCircuit}/></Route>
       <Route path="/learn"><Learn/></Route>
