@@ -1,0 +1,159 @@
+{
+  "circuit": {
+    "quantumRegisters": [
+      {
+        "start": 0,
+        "name": "q",
+        "size": 6,
+        "id": "qreg-0"
+      }
+    ],
+    "classicalRegisters": [
+      {
+        "start": 0,
+        "name": "c",
+        "size": 5,
+        "id": "creg-0"
+      }
+    ],
+    "name": "Bernstein–Vazirani · Secret 10110",
+    "numClassicalBits": 5,
+    "schemaVersion": 1,
+    "id": "bernstein-vazirani-secret-10110",
+    "createdAt": "2026-10-29T00:00:00.000Z",
+    "gates": [
+      {
+        "type": "X",
+        "column": 0,
+        "target": 5,
+        "id": "x-ancilla"
+      },
+      {
+        "type": "H",
+        "column": 1,
+        "target": 0,
+        "id": "h-q0-initial"
+      },
+      {
+        "type": "H",
+        "column": 1,
+        "target": 1,
+        "id": "h-q1-initial"
+      },
+      {
+        "type": "H",
+        "column": 1,
+        "target": 2,
+        "id": "h-q2-initial"
+      },
+      {
+        "type": "H",
+        "column": 1,
+        "target": 3,
+        "id": "h-q3-initial"
+      },
+      {
+        "type": "H",
+        "column": 1,
+        "target": 4,
+        "id": "h-q4-initial"
+      },
+      {
+        "type": "H",
+        "column": 1,
+        "target": 5,
+        "id": "h-q5-initial"
+      },
+      {
+        "column": 2,
+        "type": "CNOT",
+        "control": 1,
+        "target": 5,
+        "id": "oracle-cnot-q1-to-ancilla"
+      },
+      {
+        "column": 3,
+        "type": "CNOT",
+        "control": 2,
+        "target": 5,
+        "id": "oracle-cnot-q2-to-ancilla"
+      },
+      {
+        "column": 4,
+        "type": "CNOT",
+        "control": 4,
+        "target": 5,
+        "id": "oracle-cnot-q4-to-ancilla"
+      },
+      {
+        "type": "H",
+        "column": 5,
+        "target": 0,
+        "id": "h-q0-final"
+      },
+      {
+        "type": "H",
+        "column": 5,
+        "target": 1,
+        "id": "h-q1-final"
+      },
+      {
+        "type": "H",
+        "column": 5,
+        "target": 2,
+        "id": "h-q2-final"
+      },
+      {
+        "type": "H",
+        "column": 5,
+        "target": 3,
+        "id": "h-q3-final"
+      },
+      {
+        "type": "H",
+        "column": 5,
+        "target": 4,
+        "id": "h-q4-final"
+      },
+      {
+        "column": 6,
+        "type": "MEASURE",
+        "classicalBit": 0,
+        "qubit": 0,
+        "id": "measure-q0-to-c0"
+      },
+      {
+        "column": 6,
+        "type": "MEASURE",
+        "classicalBit": 1,
+        "qubit": 1,
+        "id": "measure-q1-to-c1"
+      },
+      {
+        "column": 6,
+        "type": "MEASURE",
+        "classicalBit": 2,
+        "qubit": 2,
+        "id": "measure-q2-to-c2"
+      },
+      {
+        "column": 6,
+        "type": "MEASURE",
+        "classicalBit": 3,
+        "qubit": 3,
+        "id": "measure-q3-to-c3"
+      },
+      {
+        "column": 6,
+        "type": "MEASURE",
+        "classicalBit": 4,
+        "qubit": 4,
+        "id": "measure-q4-to-c4"
+      }
+    ],
+    "updatedAt": "2026-10-29T00:00:00.000Z",
+    "numQubits": 6
+  },
+  "schemaVersion": 1,
+  "exportedAt": "2026-10-29T00:00:00.000Z"
+}
