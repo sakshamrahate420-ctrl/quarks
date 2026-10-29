@@ -1,0 +1,186 @@
+{
+  "circuit": {
+    "numClassicalBits": 0,
+    "quantumRegisters": [
+      {
+        "id": "qreg-0",
+        "name": "q",
+        "start": 0,
+        "size": 27
+      }
+    ],
+    "gates": [
+      {
+        "target": 0,
+        "column": 0,
+        "id": "h-q0",
+        "type": "H"
+      },
+      {
+        "target": 1,
+        "column": 1,
+        "id": "h-q1",
+        "type": "H"
+      },
+      {
+        "target": 2,
+        "column": 2,
+        "id": "h-q2",
+        "type": "H"
+      },
+      {
+        "target": 3,
+        "column": 3,
+        "id": "h-q3",
+        "type": "H"
+      },
+      {
+        "target": 4,
+        "column": 4,
+        "id": "h-q4",
+        "type": "H"
+      },
+      {
+        "target": 5,
+        "column": 5,
+        "id": "h-q5",
+        "type": "H"
+      },
+      {
+        "target": 6,
+        "column": 6,
+        "id": "h-q6",
+        "type": "H"
+      },
+      {
+        "target": 7,
+        "column": 7,
+        "id": "h-q7",
+        "type": "H"
+      },
+      {
+        "target": 8,
+        "column": 8,
+        "id": "h-q8",
+        "type": "H"
+      },
+      {
+        "target": 9,
+        "column": 9,
+        "id": "h-q9",
+        "type": "H"
+      },
+      {
+        "target": 10,
+        "column": 10,
+        "id": "h-q10",
+        "type": "H"
+      },
+      {
+        "target": 11,
+        "column": 11,
+        "id": "h-q11",
+        "type": "H"
+      },
+      {
+        "target": 12,
+        "column": 12,
+        "id": "h-q12",
+        "type": "H"
+      },
+      {
+        "target": 13,
+        "column": 13,
+        "id": "h-q13",
+        "type": "H"
+      },
+      {
+        "target": 14,
+        "column": 14,
+        "id": "h-q14",
+        "type": "H"
+      },
+      {
+        "target": 15,
+        "column": 15,
+        "id": "h-q15",
+        "type": "H"
+      },
+      {
+        "target": 16,
+        "column": 16,
+        "id": "h-q16",
+        "type": "H"
+      },
+      {
+        "target": 17,
+        "column": 17,
+        "id": "h-q17",
+        "type": "H"
+      },
+      {
+        "target": 18,
+        "column": 18,
+        "id": "h-q18",
+        "type": "H"
+      },
+      {
+        "target": 19,
+        "column": 19,
+        "id": "h-q19",
+        "type": "H"
+      },
+      {
+        "target": 20,
+        "column": 20,
+        "id": "h-q20",
+        "type": "H"
+      },
+      {
+        "target": 21,
+        "column": 21,
+        "id": "h-q21",
+        "type": "H"
+      },
+      {
+        "target": 22,
+        "column": 22,
+        "id": "h-q22",
+        "type": "H"
+      },
+      {
+        "target": 23,
+        "column": 23,
+        "id": "h-q23",
+        "type": "H"
+      },
+      {
+        "target": 24,
+        "column": 24,
+        "id": "h-q24",
+        "type": "H"
+      },
+      {
+        "target": 25,
+        "column": 25,
+        "id": "h-q25",
+        "type": "H"
+      },
+      {
+        "target": 26,
+        "column": 26,
+        "id": "h-q26",
+        "type": "H"
+      }
+    ],
+    "createdAt": "2026-10-29T00:00:00.000Z",
+    "classicalRegisters": [],
+    "updatedAt": "2026-10-29T00:00:00.000Z",
+    "id": "test-27-qubit-dense",
+    "numQubits": 27,
+    "name": "27-Qubit Dense Superposition",
+    "schemaVersion": 1
+  },
+  "schemaVersion": 1,
+  "exportedAt": "2026-10-29T00:00:00.000Z"
+}
