@@ -579,7 +579,7 @@ function Editor({ circuits, setCircuits, active, setActive, notify, onRun }: { c
       setSimulation('ready');
       setStepIndex(active.gates.length - 1);
       onRun();
-      notify(`${result.engine.includes('sparse') ? 'Sparse simulation' : 'QuantumLab WASM simulation'} completed · ${shots} shots. No quantum hardware was used.`);
+      notify(`${result.engine.includes('sparse') ? 'Sparse simulation' : result.engine.includes('tensor-network') ? 'Tensor-network simulation' : 'QuantumLab WASM simulation'} completed · ${shots} shots. No quantum hardware was used.`);
     } catch (error) {
       setSimulation('idle');
       setSimulationResult(null);
@@ -787,10 +787,10 @@ function Editor({ circuits, setCircuits, active, setActive, notify, onRun }: { c
         </div>
         <div className="canvas-controls"><button className="button subtle" onClick={() => { const clean = active.gates.map((g, i) => ({ ...g, column: i })); snapshot({ ...active, gates: clean }); }} data-testid="button-align-gates"><Activity size={13}/> Compact columns</button><span className="toolbar-spacer"/><span className="run-note" data-testid="text-keyboard-shortcuts">Ctrl/Cmd+S save · Z undo · Delete removes selection</span></div>
         <section className={`workspace-results${simulationResult ? ' has-results' : simulationError ? ' has-error' : ' is-idle'}`} aria-label="Circuit simulation results">
-          <div className="workspace-results-heading"><div><div className="panel-label">Simulation results</div><span className="run-note">Dense simulation: up to {SIMULATOR_MAX_QUBITS} qubits. Sparse simulation: up to {MAX_SPARSE_QUBITS} qubits and {MAX_SPARSE_AMPLITUDES.toLocaleString()} occupied states.</span></div><span className="status-pill">STATEVECTOR · DEMO</span></div>
+          <div className="workspace-results-heading"><div><div className="panel-label">Simulation results</div><span className="run-note">Dense simulation: up to {SIMULATOR_MAX_QUBITS} qubits. Sparse simulation: up to {MAX_SPARSE_QUBITS} qubits and {MAX_SPARSE_AMPLITUDES.toLocaleString()} occupied states. Independent single-qubit circuits use a sampled tensor network.</span></div><span className="status-pill">LOCAL SIMULATION</span></div>
           <div className="shot-control"><label htmlFor="shot-count">Measurement shots</label><input id="shot-count" type="number" min="1" max="10000" value={shots} onChange={(event) => setShots(Math.min(10000, Math.max(1, Number(event.target.value) || 1)))} data-testid="input-shot-count"/></div>
           {simulationError && <div className="notice simulation-limit-notice" role="status" data-testid="notice-simulation-limit">{simulationError}</div>}
-          {simulationResult ? <div data-testid="status-simulation"><div className="run-note workspace-engine-note"><strong>{simulation === 'ready' ? 'Simulation complete' : `Step ${Math.max(0, stepIndex + 1)} of ${active.gates.length}`}</strong> · {simulationResult.engine} · {simulationResult.engine.includes('sparse') ? 'Occupied states only; per-gate snapshots are disabled.' : 'Local simulation, not quantum hardware execution.'}</div>
+          {simulationResult ? <div data-testid="status-simulation"><div className="run-note workspace-engine-note"><strong>{simulation === 'ready' ? 'Simulation complete' : `Step ${Math.max(0, stepIndex + 1)} of ${active.gates.length}`}</strong> · {simulationResult.engine} · {simulationResult.engine.includes('sparse') ? 'Occupied states only; per-gate snapshots are disabled.' : simulationResult.engine.includes('tensor-network') ? 'Independent qubits are factorized; graphs show sampled outcomes.' : 'Local simulation, not quantum hardware execution.'}</div>
             <SimulationResultsPanel result={simulationResult} stepIndex={stepIndex} activeTab={resultTab} onTabChange={setResultTab} circuitName={active.name} notify={notify}/>
           </div> : <div className="empty workspace-results-empty" data-testid="empty-simulation">Run the circuit to view its state probabilities and measurement counts.</div>}
         </section>
@@ -835,6 +835,7 @@ function SimulationResultsPanel({ result, stepIndex, activeTab, onTabChange, cir
     probability: snapshot?.probabilities[index] ?? state.probability,
   }));
   const displayStates = [...states].sort((a, b) => b.probability - a.probability).slice(0, 64);
+  const chartMaxProbability = result.statevector ? 1 : Math.max(0.01, ...displayStates.map((state) => state.probability)) * 1.1;
   const histogram = Object.entries(result.measurementCounts)
     .map(([bitstring, count]) => ({ bitstring, count, percentage: (count / result.shots) * 100 }))
     .sort((a, b) => b.count - a.count || a.bitstring.localeCompare(b.bitstring));
@@ -856,13 +857,13 @@ function SimulationResultsPanel({ result, stepIndex, activeTab, onTabChange, cir
       <button className={activeTab === 'histogram' ? 'active' : ''} role="tab" aria-selected={activeTab === 'histogram'} onClick={() => onTabChange('histogram')} data-testid="tab-result-histogram">Counts</button>
     </div>
     {activeTab === 'statevector' && <div role="tabpanel" data-testid="panel-result-statevector">
-      <p className="result-explainer">{result.statevector ? `Probability = |amplitude|². Values shown for ${stepIndex < 0 ? "the initial state" : `operation ${stepIndex + 1}`}.${states.length > displayStates.length ? ` Showing the top ${displayStates.length} of ${states.length.toLocaleString()} basis states.` : ''}` : `Probabilities averaged over ${result.shots.toLocaleString()} measured shot trajectories. A single statevector amplitude is not defined for this ensemble.`}</p>
+      <p className="result-explainer">{result.statevector ? `Probability = |amplitude|². Values shown for ${stepIndex < 0 ? "the initial state" : `operation ${stepIndex + 1}`}.${states.length > displayStates.length ? ` Showing the top ${displayStates.length} of ${states.length.toLocaleString()} basis states.` : ''}` : result.engine.includes('tensor-network') ? `Sampled output frequencies from ${result.shots.toLocaleString()} shots. The network represents independent qubits without expanding all possible basis states.` : `Probabilities averaged over ${result.shots.toLocaleString()} measured shot trajectories. A single statevector amplitude is not defined for this ensemble.`}</p>
       <div className="result-chart" aria-label="Basis state probability chart" data-testid="chart-statevector">
         <ResponsiveContainer width="100%" height={160}>
           <BarChart data={displayStates} margin={{ top: 8, right: 4, left: -22, bottom: 2 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid, #333b4a)"/>
             <XAxis dataKey="bitstring" tickFormatter={(label: string) => label.length > 12 ? `${label.slice(0, 5)}…${label.slice(-5)}` : label} tick={{ fontSize: 9, fill: 'var(--chart-label, #a9b1c4)' }} />
-            <YAxis domain={[0, 1]} tick={{ fontSize: 9, fill: 'var(--chart-label, #a9b1c4)' }} />
+            <YAxis domain={[0, chartMaxProbability]} tick={{ fontSize: 9, fill: 'var(--chart-label, #a9b1c4)' }} />
             <ChartTooltip formatter={(value: number | string) => [`${(Number(value) * 100).toFixed(2)}%`, 'Probability']} labelFormatter={(label) => `|${label}⟩`} />
             <Bar dataKey="probability" radius={[3, 3, 0, 0]}>
               {displayStates.map((state) => <Cell key={state.bitstring} fill={state.probability > 1e-9 ? '#8b76ee' : '#435064'} />)}
@@ -941,7 +942,7 @@ function QSphereColumn({ result, stepIndex, qubits }: { result: SimulationResult
         })}</div>
       </section>
       <p className="qsphere-column-note">{result?.engine.includes('sparse') ? `Sparse view plots occupied states only: ${sphereStates.length.toLocaleString()} markers shown out of ${(2 ** qubits).toLocaleString()} possible basis states.` : 'Inspect marker position, magnitude, and phase in 3D. The diagnostics describe the currently selected simulation step.'} The selected-step diagnostics appear here.</p>
-    </> : <div className="qsphere-waiting" data-testid="empty-qsphere-column"><div className="qsphere-waiting-orb">ψ</div><strong>{result ? 'Pure state unavailable' : 'Run a circuit to explore its state'}</strong><p>{result ? 'This circuit includes measurement trajectories. Probability and counts are available in Simulation results; a single pure-state QSphere is undefined for that ensemble.' : 'The QSphere will show basis states, amplitude magnitude, and phase after the circuit runs.'}</p></div>}
+    </> : <div className="qsphere-waiting" data-testid="empty-qsphere-column"><div className="qsphere-waiting-orb">ψ</div><strong>{result ? 'Full state not expanded' : 'Run a circuit to explore its state'}</strong><p>{result ? result.engine.includes('tensor-network') ? 'This factorized result is sampled instead of expanded into a full statevector. View sampled probabilities and counts in Simulation results.' : 'This circuit includes measurement trajectories. Probability and counts are available in Simulation results; a single pure-state QSphere is undefined for that ensemble.' : 'The QSphere will show basis states, amplitude magnitude, and phase after the circuit runs.'}</p></div>}
   </aside>;
 }
 function Circuits({ circuits, onOpen, onNew, onDelete }: { circuits: Circuit[]; onOpen: (c: Circuit) => void; onNew: () => void; onDelete: (c: Circuit) => void }) {
