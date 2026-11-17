@@ -1,108 +1,219 @@
-# QuantumLab
+# ⚛️ QUARKS — Interactive Quantum Circuit Simulator
 
-QUARKS is a quantum circuit composer and simulator powered by a self-built C++ engine.
+**Explore. Build. Simulate. Understand Quantum Computing.**
 
-QuantumLab is a small state-vector quantum circuit simulator. Its simulation engine is written in C++20 and can be compiled both as a native library for testing and as WebAssembly for in-browser execution. The website is a separate static HTML/CSS/JavaScript client.
+QUARKS is an interactive quantum circuit development and simulation platform designed to make quantum computing more accessible through visual circuit construction, real-time code generation, and quantum state visualization.
 
-**There is no server-side simulation.** Circuits of up to 16 qubits in the editor use the C++20 engine compiled to WebAssembly. Selected larger circuits use bounded TypeScript fallbacks: a sparse state map, or a product-state tensor representation that samples outcomes without expanding the full basis.
+Inspired by tools such as IBM Quantum Composer, QUARKS aims to bridge the gap between theoretical quantum computing concepts and practical experimentation by allowing users to build quantum circuits, apply quantum gates, and understand their resulting states through interactive visualizations.
 
-## Features
+---
 
-- X, Y, Z, H, S, T and inverse phase gates; parameterized RX/RY/RZ rotations; CNOT, CZ, SWAP and Toffoli gates.
-- Complex double-precision state-vector amplitudes.
-- Final basis-state probabilities.
-- Seeded terminal-measurement sampling.
-- Per-shot mid-circuit measurement, state collapse, classical-bit output, and conditional X/Z feed-forward.
-- Optional post-gate state-vector snapshots.
-- Versioned request/response protocol with structured error codes.
-- Configurable runtime limits with hard safety ceilings.
-- Parameterized and controlled multi-qubit gates used in common quantum circuit workflows.
-- Native CMake/CTest tests and an Emscripten target.
+## 🚀 Key Features
 
-## Quick start: native build
+### 1. Interactive Quantum Circuit Editor
+- Build quantum circuits using a visual drag-and-drop interface.
+- Add and arrange quantum gates on circuit wires.
+- Create and modify circuits interactively.
+- Supports fundamental quantum gates:
+  - **X Gate** – Pauli-X / Quantum NOT gate
+  - **Y Gate** – Pauli-Y gate
+  - **Z Gate** – Pauli-Z gate
+  - **H Gate** – Hadamard gate
+  - **CNOT Gate** – Controlled-NOT gate
+- Manage qubits and classical registers.
 
-Requirements: CMake 3.20+, a C++20 compiler, and a supported native build tool.
+### 2. Live Quantum Code Generation
+- Automatically generate quantum circuit code.
+- View the corresponding Qiskit/OpenQASM representation.
+- Keep visual circuit construction and code representation synchronized.
+
+### 3. Quantum State Visualization
+Understand the output of quantum circuits through visual representations:
+
+- Statevector visualization
+- Probability distribution charts
+- Measurement histograms
+- QSphere visualization
+- State-angle and phase-angle views
+
+### 4. Circuit Simulation
+- Execute quantum circuits using the quantum simulation engine.
+- Examine the resulting quantum state.
+- View measurement probabilities and counts.
+- Inspect intermediate states after individual gates.
+
+### 5. Productivity Tools
+- Undo and redo circuit operations.
+- Export circuit visualizations in SVG and PNG formats.
+- Export simulation data in CSV format.
+- Access help and documentation.
+
+### 6. User Interface
+- Interactive dashboard.
+- Light and dark themes.
+- Navigation and circuit workspace.
+- Help and About sections.
+
+---
+
+## 🏗️ Technology Stack
+
+| Component | Technology |
+|---|---|
+| Frontend | React.js |
+| Build Tool | Vite |
+| Language | TypeScript |
+| Structure | HTML5 |
+| Styling | CSS3 |
+| Quantum Simulation Engine | C++17 |
+| Browser Integration | Emscripten / WebAssembly (planned integration) |
+| Quantum Code Representation | Qiskit / OpenQASM |
+| Version Control | Git & GitHub |
+
+---
+
+## 🧠 System Architecture
+
+QUARKS is designed around two major components:
+
+**1. Frontend — Quantum Circuit Workspace**
+
+The React-based frontend provides the visual environment where users can:
+- Construct quantum circuits.
+- Add and manage gates.
+- Edit circuit configurations.
+- View generated quantum code.
+- Visualize simulation results.
+
+**2. Backend — Quantum Simulation Engine**
+
+The C++17 simulation engine handles the underlying quantum computation.
+
+Its intended interface provides:
+- Final quantum statevector.
+- Measurement probabilities.
+- Measurement counts.
+- Intermediate state snapshots after gate operations.
+- Circuit validation and error information.
+
+The engine is intended to integrate with the browser through WebAssembly using Emscripten.
+
+---
+
+## 📂 Project Structure
+
+The project is organized around the following conceptual structure:
+
+```text
+QUARKS/
+│
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── circuit-editor/
+│   │   ├── visualizations/
+│   │   ├── services/
+│   │   └── assets/
+│   ├── index.html
+│   └── package.json
+│
+├── quantum-engine/
+│   ├── src/
+│   ├── include/
+│   └── CMakeLists.txt
+│
+└── README.md
+```
+
+*Note: This represents the intended logical organization. Actual directory names may differ in the implementation.*
+
+---
+
+## ⚙️ Getting Started
+
+### Prerequisites
+
+- Node.js and npm
+- Git
+- A C++17-compatible compiler (for the quantum engine)
+
+### Run the Frontend
+
+1. Clone the repository:
 
 ```bash
-cmake -S . -B build/native -DCMAKE_BUILD_TYPE=Debug -DQUANTUMLAB_BUILD_TESTS=ON
-cmake --build build/native --parallel
-ctest --test-dir build/native --output-on-failure
+git clone <YOUR_REPOSITORY_URL>
 ```
 
-## WebAssembly build
-
-Install and activate the Emscripten SDK (`emsdk`) first. Follow the official [Emscripten installation instructions](https://emscripten.org/docs/getting_started/downloads.html). From the activated SDK shell, run:
+2. Navigate to the frontend directory:
 
 ```bash
-emcmake cmake -S . -B build/wasm -DCMAKE_BUILD_TYPE=Release -DQUANTUMLAB_BUILD_WASM=ON -DQUANTUMLAB_BUILD_TESTS=ON
-cmake --build build/wasm --parallel
+cd frontend
 ```
 
-The WASM target should emit `build/wasm/quantumlab_wasm.mjs` and its companion `build/wasm/quantumlab_wasm.wasm`. The generated output is not checked into source control.
+3. Install dependencies:
 
-If you want to run the optional Emscripten binding smoke test under Node.js, use the instructions in [`docs/building.md`](docs/building.md). Node.js is only used as a test runner or, optionally, for local static preview; it is not an application backend.
-
-## Browser demo
-
-After building WASM, serve the **repository root** through a static HTTP server and open `web-demo/index.html`. For example, open the project folder in VS Code and use a static Live Server extension. Keep the `build/wasm/` directory at the expected relative path, or adjust the import in `web-demo/quantumlab-api.js` to match your website's asset layout.
-
-Do not open the page via `file://`: ES module imports and fetching the WASM asset require a local or hosted HTTP(S) origin.
-
-### Windows quick start in this workspace
-
-Double-click [`run-demo.bat`](run-demo.bat). It rebuilds the WebAssembly module, copies the generated files to `build/wasm/`, and starts a local-only web server. Open <http://127.0.0.1:8000/web-demo/> in your browser. Keep the command window open while using the demo and press Ctrl+C there to stop the server.
-
-This launcher uses the Emscripten SDK in the workspace's sibling `emsdk/` folder and the prepared Ninja executable in `.tools/pythonpkgs/bin/`. The standard build commands above remain available for other platforms.
-
-## Public JavaScript API
-
-```js
-import { createSimulator } from "./quantumlab-api.js";
-const simulator = await createSimulator();
-const result = await simulator.simulateCircuit(request);
+```bash
+npm install
 ```
 
-- Successful simulations resolve to `{ success: true, ... }`.
-- Invalid circuits resolve to `{ success: false, error: { code, message }, ... }`.
-- Module loading and configuration errors reject `createSimulator()`.
-- The API returns plain JavaScript values, not exposed C++ pointers or raw memory views.
+4. Start the development server:
 
-See [`docs/protocol-v1.md`](docs/protocol-v1.md), [`docs/architecture.md`](docs/architecture.md), and [`docs/building.md`](docs/building.md) for the contract and build details.
+```bash
+npm run dev
+```
 
-## Scope and limitations
+5. Open the local URL displayed in your terminal.
 
-This is an ideal state-vector simulator. It does not model hardware noise, density matrices, reset, arbitrary classical expressions, quantum hardware, or fault tolerance. Mid-circuit measurements run as independent shot trajectories; conditional X/Z gates can read the classical bits written by those measurements. Dense state-vector simulation grows exponentially with qubit count; resource limits are part of the safety model, not an optional optimization. No performance claims are made without benchmarks on the target machine/browser.
+*The commands above assume the frontend uses the standard Vite npm scripts.*
 
-## Status
+---
 
-The source is designed for native testing and Emscripten compilation. Run the commands above and consult the build report for the environment-specific verification performed when this project was packaged. A WASM artifact must be built with an installed Emscripten SDK before the browser demo can run.
+## 🎯 Project Goals
 
+QUARKS aims to:
 
-## QUARKS Circuit IDE frontend
+- Simplify experimentation with quantum circuits.
+- Make fundamental quantum gates easier to understand.
+- Connect visual circuit design with quantum programming.
+- Provide intuitive visualizations of quantum states.
+- Make quantum simulation more approachable for students and beginners.
 
-The project includes the QUARKS drag-and-drop circuit composer in `frontend/`. It uses the existing QuantumLab C++/WebAssembly engine through the stable protocol adapter in `web-demo/quantumlab-api.js`; circuits and simulation stay local in the browser.
+---
 
-The composer supports up to 28 qubits for building and exporting circuits. The dense C++/WebAssembly simulator is capped at 16 qubits in the editor. Above that, circuits which remain factorizable into independent qubit states use a bond-dimension-one tensor-network representation and sample the output distribution without expanding the full basis. This includes Bernstein-Vazirani's CNOT oracle when its target ancilla is in an X eigenstate. Other circuits use a sparse state-vector path for at most 65,536 occupied basis states, with a resource message above that limit. These large-circuit modes omit per-gate snapshots; tensor-network graphs show sampled outcomes rather than every possible basis state. A dense 28-qubit statevector alone needs about 4 GiB for complex amplitudes, before simulator snapshots and browser-side data.
+## 🔮 Future Scope
 
-### Bernstein-Vazirani example and tests
+Potential areas of further development include:
 
-The Dashboard includes a changeable secret input (2 to 27 bits). **Open Bernstein-Vazirani circuit** creates an editable circuit with one extra ancilla qubit, so a 27-bit secret uses the editor's maximum of 28 qubits. The circuit prepares the ancilla in `|->`, applies an oracle CNOT for each `1` in the secret, applies Hadamards to the input register, and measures the input qubits. The measured input bitstring is the secret. At 28 qubits, the product-state tensor path recognizes that the ancilla is an X eigenstate and applies each CNOT as a phase on its control, preserving the factorized representation.
+- Complete browser integration of the C++ engine through WebAssembly.
+- User accounts and circuit management.
+- Cloud-based circuit storage and backup.
+- Expanded quantum gate library.
+- More advanced quantum algorithms and circuit examples.
+- Improved simulation performance and scalability.
 
-The native test `tests/test_bernstein_vazirani.cpp` runs every secret for `n=2..10` through the C++ state-vector simulator and asserts that total probability on the secret input is 1 within `1e-10`. The frontend test `frontend/src/services/simulation/bernsteinVazirani.test.ts` exercises the large product-state route for all the same secrets, then benchmarks a random 27-bit secret (28 total qubits, 1024 shots) and prints the elapsed time.
+---
 
-Run the native checks with `cmake -S . -B build/native -DCMAKE_BUILD_TYPE=Release -DQUANTUMLAB_BUILD_TESTS=ON`, `cmake --build build/native --parallel`, and `ctest --test-dir build/native --output-on-failure`. Run the focused frontend Bernstein-Vazirani tests with `npm test --prefix frontend -- src/services/simulation/bernsteinVazirani.test.ts --reporter=verbose --silent=false`.
+## 👨‍💻 Team & Development
 
-### Launch on Windows
+QUARKS is being developed as a collaborative quantum computing project, combining frontend engineering with low-level quantum simulation.
 
-Run `run-demo.bat` from File Explorer or a terminal. The script builds the WASM engine, installs the frontend packages on first launch, and starts Vite at <http://127.0.0.1:5173/>. Keep the terminal open while using the IDE. In the editor, **Focus canvas** hides the gate palette and inspector; **Show panels** brings them back.
+The project explores the intersection of:
 
-### Launch from VS Code
+- Quantum Computing
+- C++ Systems Programming
+- Web Development
+- Interactive Data Visualization
+- Quantum Circuit Simulation
 
-Open the `quantumlab` folder in VS Code and run `run-demo.bat` in the integrated terminal. For frontend-only work after the WASM files have been built, open a terminal in `frontend/`, run `npm install` once, then `npm run dev`.
+---
 
+## 📜 License
 
-## Publish the public website
+A license should be added before distributing or reusing the project publicly.
 
-A GitHub Actions workflow builds the C++ engine to WebAssembly, builds the QUARKS frontend, and deploys it to GitHub Pages whenever changes reach `main`. To turn on the public site, open the repository's **Settings → Pages**, set **Source** to **GitHub Actions**, and wait for the workflow in the **Actions** tab to finish.
+---
 
-For this repository, the Pages URL is `https://sakshamrahate420-ctrl.github.io/quarks/`. The site runs circuits locally in each visitor's browser; it does not require user accounts or a simulation server.
+**QUARKS — Making Quantum Computing Interactive.** ⚛️
